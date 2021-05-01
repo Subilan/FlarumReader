@@ -1,10 +1,12 @@
 package org.sotap.FlarumReader.Utils;
 
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
@@ -12,13 +14,15 @@ import org.json.JSONObject;
 
 public final class Requests {
     private JSONObject empty;
+    public CookieStore cs;
 
     public Requests() {
         this.empty = new JSONObject();
+        this.cs = new BasicCookieStore();
     }
 
     private CloseableHttpClient get() {
-        return HttpClients.custom().setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build()).build();
+        return HttpClients.custom().setDefaultRequestConfig(RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build()).setDefaultCookieStore(this.cs).build();
     }
 
     public JSONObject login(String name, String password) {
@@ -26,6 +30,7 @@ public final class Requests {
         JSONObject data = new JSONObject();
         data.put("identification", name);
         data.put("password", password);
+        data.put("lifetime", 604800);
         try {
             HttpPost post = new HttpPost("https://g.sotap.org/api/token");
             StringEntity params = new StringEntity(data.toString());
@@ -33,9 +38,9 @@ public final class Requests {
             post.setEntity(params);
             CloseableHttpResponse r = client.execute(post);
             if (r != null) {
-                String str = EntityUtils.toString(r.getEntity());
+                JSONObject result = new JSONObject(EntityUtils.toString(r.getEntity()));
                 client.close();
-                return new JSONObject(str);
+                return result;
             } else {
                 return empty;
             }

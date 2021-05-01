@@ -3,7 +3,7 @@ package org.sotap.FlarumReader.Utils;
 import java.util.logging.Logger;
 
 import org.bukkit.ChatColor;
-import org.bukkit.entity.Player;
+import org.bukkit.command.CommandSender;
 import org.sotap.FlarumReader.Main;
 
 public final class LogUtil {
@@ -21,7 +21,7 @@ public final class LogUtil {
         return ChatColor.translateAlternateColorCodes('&', message);
     }
 
-    public static void success(String message, Player... p) {
+    public static void success(String message, CommandSender... p) {
         if (p.length > 0) {
             if (p[0] != null) {
                 p[0].sendMessage(translateColor(SUCCESS + message));
@@ -31,7 +31,7 @@ public final class LogUtil {
         origin.info(translateColor(SUCCESS + message));
     }
 
-    public static void warn(String message, Player... p) {
+    public static void warn(String message, CommandSender... p) {
         if (p.length > 0) {
             if (p[0] != null) {
                 p[0].sendMessage(translateColor(WARN + message));
@@ -41,7 +41,7 @@ public final class LogUtil {
         origin.info(translateColor(WARN + message));
     }
 
-    public static void failed(String message, Player... p) {
+    public static void failed(String message, CommandSender... p) {
         if (p.length > 0) {
             if (p[0] != null) {
                 p[0].sendMessage(translateColor(FAILED + message));
@@ -51,7 +51,7 @@ public final class LogUtil {
         origin.info(translateColor(FAILED + message));
     }
 
-    public static void info(String message, Player... p) {
+    public static void info(String message, CommandSender... p) {
         if (p.length > 0) {
             if (p[0] != null) {
                 p[0].sendMessage(translateColor(INFO + message));
