@@ -1,0 +1,57 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group 'org.sotap'
+version '1.0.0'
+ext.minecraftVersion = '1.16.5'
+mainClassName = 'org.sotap.FlarumReader.Main'
+
+jar {
+    manifest {
+        attributes "Main-Class": "$mainClassName"
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it)}
+    }
+}
+
+sourceCompatibility = 11
+
+repositories {
+    jcenter()
+    maven { name 'Spigot'; url 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
+    maven { name 'Sonatype'; url 'https://oss.sonatype.org/content/groups/public' }
+}
+
+dependencies {
+    compileOnly "org.spigotmc:spigot-api:$minecraftVersion-R0.1-SNAPSHOT"
+    testImplementation 'junit:junit:4.13'
+    testImplementation 'com.google.code.findbugs:jsr305:3.0.2'
+    implementation 'org.jetbrains:annotations:16.0.2'
+    // https://mvnrepository.com/artifact/javax.validation/validation-api
+    implementation group: 'javax.validation', name: 'validation-api', version: '1.0.0.GA'
+    // https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient
+    implementation group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.2'
+    // https://mvnrepository.com/artifact/org.json/json
+    implementation group: 'org.json', name: 'json', version: '20210307'
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+import org.apache.tools.ant.taskdefs.condition.Os;
+
+task runBuild(type: Exec) {
+    doFirst {
+        if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+            commandLine = ['cmd', '/C', 'start', 'copy.bat']
+        } else {
+            commandLine = ['echo', 'Nothing to do on system other than Windows.']
+        }
+    }
+}
+jar.finalizedBy runBuild
