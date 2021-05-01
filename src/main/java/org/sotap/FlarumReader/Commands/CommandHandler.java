@@ -41,12 +41,20 @@ public final class CommandHandler implements CommandExecutor {
                     if (r.isEmpty()) {
                         LogUtil.failed("指令执行时出现问题。", sender);
                     } else {
+                        if (!r.has("token")) {
+                            LogUtil.failed("用户名或密码错误。", sender);
+                            return true;
+                        }
+                        Date d = new Date();
+                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                        if (Files.getLogins().getLong(senderName + ".exp-time") > d.getTime()) {
+                            LogUtil.failed("你已经登录了。", sender);
+                            return true;
+                        }
                         String token = r.getString("token");
                         String id = Integer.toString(r.getInt("userId"));
                         FileConfiguration fc = Files.getLogins();
                         ConfigurationSection cs = fc.createSection(senderName);
-                        Date d = new Date();
-                        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
                         cs.set("token", token);
                         cs.set("id", id);
                         cs.set("username", args[1]);
