@@ -1,8 +1,0 @@
-org/sotap/FlarumReader/Main.java
- org.sotap.FlarumReader.Main
-org/sotap/FlarumReader/Utils/LogUtil.java
- org.sotap.FlarumReader.Utils.LogUtil
-org/sotap/FlarumReader/Commands/CommandHandler.java
- org.sotap.FlarumReader.Commands.CommandHandler
-org/sotap/FlarumReader/Utils/Requests.java
- org.sotap.FlarumReader.Utils.Requests
