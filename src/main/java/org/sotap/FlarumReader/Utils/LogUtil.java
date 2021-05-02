@@ -21,6 +21,16 @@ public final class LogUtil {
         return ChatColor.translateAlternateColorCodes('&', message);
     }
 
+    public static void log(String message, CommandSender... p) {
+        if (p.length > 0) {
+            if (p[0] != null) {
+                p[0].sendMessage(translateColor(message));
+                return;
+            }
+        }
+        origin.info(translateColor(message));
+    }  
+
     public static void success(String message, CommandSender... p) {
         if (p.length > 0) {
             if (p[0] != null) {
