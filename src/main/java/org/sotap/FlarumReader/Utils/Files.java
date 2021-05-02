@@ -3,9 +3,12 @@ package org.sotap.FlarumReader.Utils;
 import java.io.File;
 import java.io.IOException;
 
+import org.apache.http.HttpResponse;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.sotap.FlarumReader.Main;
 
 public final class Files {
@@ -15,6 +18,40 @@ public final class Files {
     public static void init(Main plugin) {
         cwd = plugin.getDataFolder().getPath();
         config = plugin.getConfig();
+        Files.load(".", "maps.yml");
+    }
+
+    public static String getUsernameById(String id) {
+        FileConfiguration maps = Files.load(".", "maps.yml");
+        return maps.getString(id + ".username");
+    }
+
+    public static String getIdByUsername(String username) {
+        FileConfiguration maps = Files.load(".", "maps.yml");
+        return maps.getString(username + ".id");
+    }
+
+    public static void writeMaps(HttpResponse res) {
+        FileConfiguration maps = Files.load(".", "maps.yml");
+        JSONObject r = Requests.toJSON(res.getEntity());
+        JSONArray data = r.getJSONArray("data");
+        JSONObject current;
+        for (int i = 0; i < data.length(); i++) {
+            current = data.getJSONObject(i);
+            maps.set(current.getString("id") + ".username", current.getJSONObject("attributes").getString("username"));
+            maps.set(current.getJSONObject("attributes").getString("username") + ".id", current.getString("id"));
+        }
+        save(maps, "./maps.yml");
+    }
+
+    public static void updateMaps() {
+        LogUtil.info("初始化用户表中...");
+        Requests req = new Requests();
+        req.getUserMap();
+    }
+
+    public static FileConfiguration getMaps() {
+        return Files.load(".", "maps.yml");
     }
 
     public static FileConfiguration getLogins() {
@@ -44,9 +81,9 @@ public final class Files {
 
     public static FileConfiguration load(String path, String name) {
         try {
-            return YamlConfiguration
-                    .loadConfiguration(getFile(new File(path.replace(path.length() == 1 ? "." : "./",
-                            path.length() == 1 ? cwd : cwd + "/")), name));
+            return YamlConfiguration.loadConfiguration(getFile(
+                    new File(path.replace(path.length() == 1 ? "." : "./", path.length() == 1 ? cwd : cwd + "/")),
+                    name));
         } catch (IOException e) {
             e.printStackTrace();
             return null;
