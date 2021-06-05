@@ -66,6 +66,18 @@ public final class Requests {
         }
     }
 
+    public void getDiscussion(String token, String id, FutureCallback<HttpResponse> callback) {
+        CloseableHttpAsyncClient client = get();
+        client.start();
+        try {
+            HttpGet get = new HttpGet("https://g.sotap.org/api/discussions/" + id);
+            get.addHeader("Authorization", "Token " + token);
+            client.execute(get, callback);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public void getUser(String token, String identifier, FutureCallback<HttpResponse> callback) {
         CloseableHttpAsyncClient client = get();
         client.start();
@@ -92,7 +104,7 @@ public final class Requests {
                     client.execute(get, new FutureCallback<HttpResponse>(){
                         public void completed(final HttpResponse re) {
                             try {
-                                Files.writeMaps(re);
+                                Files.writeUserMap(re);
                             } catch (Exception e) {
                                 return;
                             }

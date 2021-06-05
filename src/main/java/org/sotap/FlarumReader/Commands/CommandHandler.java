@@ -11,9 +11,11 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.json.JSONObject;
 import org.sotap.FlarumReader.Main;
+import org.sotap.FlarumReader.Abstract.Discussion;
 import org.sotap.FlarumReader.Abstract.Login;
 import org.sotap.FlarumReader.Abstract.MainPost;
 import org.sotap.FlarumReader.Abstract.MainPosts;
@@ -27,9 +29,32 @@ public final class CommandHandler implements CommandExecutor {
     private Requests req;
     private CommandSender sender;
     private Login l;
+    private MemoryConfiguration currentLists;
 
     public CommandHandler(Main plugin) {
         this.plugin = plugin;
+        this.currentLists = new MemoryConfiguration();
+    }
+
+    private boolean showDiscussion(int index) {
+        String id = currentLists.getString(senderName + "." + index);
+        req.getDiscussion(l.getToken(), id, new FutureCallback<HttpResponse>(){
+            public void completed(final HttpResponse re) {
+                JSONObject r =  Requests.toJSON(re.getEntity());
+                Discussion disc = new Discussion(r);
+                disc.getGUI();
+            }
+
+            public void failed(final Exception e) {
+                e.printStackTrace();
+                LogUtil.failed("指令执行时出现问题。", sender);
+            }
+
+            public void cancelled() {
+                LogUtil.warn("任务被中断。", sender);
+            }
+        });
+        return true;
     }
 
     private boolean showList(int page) {
@@ -41,8 +66,16 @@ public final class CommandHandler implements CommandExecutor {
                 MainPost current;
                 for (int i = 0; i < all.size(); i++) {
                     current = all.get(i);
+                    currentLists.set(senderName + "." + (i + 1), current.id);
                     LogUtil.mainThreadTitle(current.title, Files.getUsernameById(current.authorId), sender,
-                            "[&e" + ((page - 1) * 10 + i + 1) + "&r] ");
+                            "[&e" + (i + 1) + "&r] ");
+                }
+                if (all.size() < 10) {
+                    if (all.size() > 0) {
+                        LogUtil.log("&e已经是最后一页。", sender);
+                    } else {
+                        LogUtil.failed("没有更多内容。", sender);
+                    }
                 }
             }
 
@@ -65,29 +98,20 @@ public final class CommandHandler implements CommandExecutor {
             senderName = sender.getName();
             this.sender = sender;
             l = new Login(senderName);
-            if (!l.valid()) {
-                LogUtil.failed("你需要登录才能进行此操作。", sender);
-                return true;
+
+            if (!args[0].equals("login") && !args[0].equals("l")) {
+                if (!l.valid()) {
+                    LogUtil.failed("你需要登录才能进行此操作。", sender);
+                    return true;
+                }
             }
 
             if (args.length == 0) {
                 return showList(1);
             }
 
-            try {
-                int page = Integer.parseInt(args[0]);
-                if (page <= 0) {
-                    LogUtil.failed("页面序号不能小于 1。", sender);
-                    return true;
-                }
-                return showList(page);
-            } catch (NumberFormatException e) {
-                // do nothing
-            }
-
             switch (args[0]) {
-                case "login":
-                case "l": {
+                case "login": {
                     if (args.length != 3) {
                         LogUtil.failed("用户名或密码不能为空。", sender);
                         return true;
@@ -140,12 +164,41 @@ public final class CommandHandler implements CommandExecutor {
                 }
                     break;
 
-                case "logout":
-                case "t": {
+                case "logout": {
                     FileConfiguration l = Files.getLogins();
                     l.set(senderName, null);
                     Files.saveLogins(l);
                     LogUtil.success("成功退出。", sender);
+                    break;
+                }
+
+                case "list":
+                case "l": {
+                    try {
+                        int page = (args.length > 1) ? Integer.parseInt(args[1]) : 1;
+                        if (page <= 0) {
+                            LogUtil.failed("页面序号不能小于 1。", sender);
+                            return true;
+                        }
+                        return showList(page);
+                    } catch (NumberFormatException e) {
+                        LogUtil.failed("页面序号只能是正整数。", sender);
+                    }
+                    break;
+                }
+
+                case "view":
+                case "v": {
+                    try {
+                        int index = Integer.parseInt(args[1]);
+                        if (!(index >= 1 && index <= 10)) {
+                            LogUtil.failed("序号必须在 1 到 10 之间（包含端点）。", sender);
+                            return true;
+                        }
+                        return showDiscussion(index);
+                    } catch (NumberFormatException e) {
+                        LogUtil.failed("无效的序号。", sender);
+                    }
                     break;
                 }
 

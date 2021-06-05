@@ -14,7 +14,7 @@ public final class Main extends JavaPlugin {
         saveDefaultConfig();
         LogUtil.init(this);
         Files.init(this);
-        Files.updateMaps();
+        Files.updateUserMap();
         Objects.requireNonNull(Bukkit.getPluginCommand("flarumreader")).setExecutor(new CommandHandler(this));
         // Objects.requireNonNull(Bukkit.getPluginCommand("flarumreader")).setTabCompleter(new Tab());
         LogUtil.success("插件已&a启用&r。");
