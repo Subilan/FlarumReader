@@ -70,4 +70,10 @@ public final class LogUtil {
         }
         origin.info(translateColor(INFO + message));
     }
+
+    public static void mainThreadTitle(String title, String author, CommandSender sender, String... prepend) {
+        String _prepend = prepend.length > 0 ? prepend[0] : "";
+        log(_prepend + "&a" + title + "&f &8-&r &oby &7&o"
+        + author, sender);
+    }
 }

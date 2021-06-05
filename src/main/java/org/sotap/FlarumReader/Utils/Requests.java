@@ -47,11 +47,11 @@ public final class Requests {
         }
     }
 
-    public void getMainPage(FutureCallback<HttpResponse> callback) {
+    public void getMainPage(int page, FutureCallback<HttpResponse> callback) {
         CloseableHttpAsyncClient client = get();
         client.start();
         try {
-            HttpGet get = new HttpGet("https://g.sotap.org/api/discussions?page[limit]=10");
+            HttpGet get = new HttpGet("https://g.sotap.org/api/discussions?page[limit]=10&page[offset]=" + (page - 1) * 10);
             client.execute(get, callback);
         } catch (Exception e) {
             e.printStackTrace();

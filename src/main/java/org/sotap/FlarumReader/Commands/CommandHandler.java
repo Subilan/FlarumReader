@@ -23,46 +23,66 @@ import org.sotap.FlarumReader.Utils.Requests;
 
 public final class CommandHandler implements CommandExecutor {
     public final Main plugin;
+    private String senderName;
+    private Requests req;
+    private CommandSender sender;
+    private Login l;
 
     public CommandHandler(Main plugin) {
         this.plugin = plugin;
     }
 
+    private boolean showList(int page) {
+        req.getMainPage(page, new FutureCallback<HttpResponse>() {
+            public void completed(final HttpResponse re) {
+                JSONObject r = Requests.toJSON(re.getEntity());
+                MainPosts mps = new MainPosts(l.getToken(), r);
+                List<MainPost> all = mps.getAll();
+                MainPost current;
+                for (int i = 0; i < all.size(); i++) {
+                    current = all.get(i);
+                    LogUtil.mainThreadTitle(current.title, Files.getUsernameById(current.authorId), sender,
+                            "[&e" + ((page - 1) * 10 + i + 1) + "&r] ");
+                }
+            }
+
+            public void failed(final Exception e) {
+                e.printStackTrace();
+                LogUtil.failed("指令执行时出现问题。", sender);
+            }
+
+            public void cancelled() {
+                LogUtil.warn("任务被中断。", sender);
+            }
+        });
+        return true;
+    }
+
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
         if (cmd.getName().equalsIgnoreCase("flarumreader")) {
-            Requests req = new Requests();
-            String senderName = sender.getName();
+            req = new Requests();
+            senderName = sender.getName();
+            this.sender = sender;
+            l = new Login(senderName);
+            if (!l.valid()) {
+                LogUtil.failed("你需要登录才能进行此操作。", sender);
+                return true;
+            }
 
             if (args.length == 0) {
-                Login l = new Login(senderName);
-                if (!l.valid()) {
-                    LogUtil.failed("你需要登录才能进行此操作。", sender);
+                return showList(1);
+            }
+
+            try {
+                int page = Integer.parseInt(args[0]);
+                if (page <= 0) {
+                    LogUtil.failed("页面序号不能小于 1。", sender);
                     return true;
                 }
-                req.getMainPage(new FutureCallback<HttpResponse>() {
-                    public void completed(final HttpResponse re) {
-                        JSONObject r = Requests.toJSON(re.getEntity());
-                        MainPosts mps = new MainPosts(l.getToken(), r);
-                        List<MainPost> all = mps.getAll();
-                        MainPost current;
-                        for (int i = 0; i < all.size(); i++) {
-                            current = all.get(i);
-                            LogUtil.log("[&e" + (i + 1) + "&f] &a" + current.title + "&f &8-&r &oby &7&o"
-                                    + Files.getUsernameById(current.authorId), sender);
-                        }
-                    }
-
-                    public void failed(final Exception e) {
-                        e.printStackTrace();
-                        LogUtil.failed("指令执行时出现问题。", sender);
-                    }
-
-                    public void cancelled() {
-                        LogUtil.warn("任务被中断。", sender);
-                    }
-                });
-                return true;
+                return showList(page);
+            } catch (NumberFormatException e) {
+                // do nothing
             }
 
             switch (args[0]) {
@@ -126,6 +146,11 @@ public final class CommandHandler implements CommandExecutor {
                     l.set(senderName, null);
                     Files.saveLogins(l);
                     LogUtil.success("成功退出。", sender);
+                    break;
+                }
+
+                default: {
+                    LogUtil.failed("无效参数。", sender);
                 }
             }
         }
