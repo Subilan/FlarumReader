@@ -72,13 +72,13 @@ public final class Discussion {
     public ItemStack getBook() {
         String finalContent = this.content;
         if (this.replyList.size() > 1) {
-            finalContent += "\n\n---\n**" + (this.replyList.size() - 1) +" 条回复**\n---\n";
+            finalContent += "\n\n---\n**" + (this.replyList.size() - 1) + " 条回复**\n---\n";
             Reply current;
             for (int i = 1; i < this.replyList.size(); i++) {
-               current = replyList.get(i);
-               finalContent += "\n\n" + i + ". **" + current.author + "**\n" + current.content;
+                current = replyList.get(i);
+                finalContent += "\n\n&l&a" + i + "&r&r **" + current.author + "**\n" + current.content;
             }
-            
+
             if (this.replyList.size() > 10) {
                 finalContent += "\n\n*由于 API 限制，回复可能显示不完整。[点击前往原帖查看](https://g.sotap.org/d/" + this.id + ")*";
             }
@@ -99,6 +99,9 @@ public final class Discussion {
         boolean linkContent = false;
         boolean linkHref = false;
         boolean link = false;
+        boolean green = false;
+        boolean aqua = false;
+        boolean yellow = false;
         List<String> currentLinkContent = new ArrayList<>();
         List<String> currentLinkHref = new ArrayList<>();
         List<BaseComponent[]> components = new ArrayList<>();
@@ -118,19 +121,30 @@ public final class Discussion {
                     underline = true;
                 if (t.equals("o"))
                     italic = true;
+                if (t.equals("a"))
+                    green = true;
+                if (t.equals("b"))
+                    aqua = true;
+                if (t.equals("e"))
+                    yellow = true;
                 if (t.equals("r")) {
                     bold = false;
                     strikethrough = false;
                     underline = false;
                     italic = false;
+                    green = false;
+                    aqua = false;
+                    yellow = false;
                     if (link) {
                         String currentLinkContentString = String.join("", currentLinkContent);
                         String currentLinkHrefString = String.join("", currentLinkHref);
                         for (String c_ : currentLinkContent) {
                             try {
-                            tb = BookUtil.TextBuilder.of(c_).style(ChatColor.UNDERLINE)
-                                    .onHover(BookUtil.HoverAction.showText("点击打开链接"))
-                                    .onClick(BookUtil.ClickAction.openUrl(currentLinkHrefString.equals("url") ? currentLinkContentString : currentLinkHrefString));
+                                tb = BookUtil.TextBuilder.of(c_).style(ChatColor.UNDERLINE)
+                                        .onHover(BookUtil.HoverAction.showText("点击打开链接"))
+                                        .onClick(BookUtil.ClickAction
+                                                .openUrl(currentLinkHrefString.equals("url") ? currentLinkContentString
+                                                        : currentLinkHrefString));
                             } catch (IllegalArgumentException e) {
                                 // invalid URL
                                 tb = BookUtil.TextBuilder.of(c_);
@@ -201,6 +215,12 @@ public final class Discussion {
                 tb = tb.style(ChatColor.UNDERLINE);
             if (italic)
                 tb = tb.style(ChatColor.ITALIC);
+            if (green)
+                tb = tb.color(ChatColor.GREEN);
+            if (aqua)
+                tb = tb.color(ChatColor.AQUA);
+            if (yellow)
+                tb = tb.color(ChatColor.YELLOW);
             current.add(tb.build());
             col++;
             if (col == 13) {
@@ -215,6 +235,15 @@ public final class Discussion {
                 current = new BookUtil.PageBuilder();
             }
             k++;
+            // not cool :(
+            try {
+                if (k == chars.length && line < 15) {
+                    components.add(current.build());
+                    break;
+                }
+            } catch (IndexOutOfBoundsException e) {
+
+            }
         }
         return BookUtil.writtenBook().pages(components).build();
     }
@@ -238,10 +267,12 @@ final class Markdown {
         this.patterns.add(Pattern.compile("`(.*?)`"));
         this.patterns.add(Pattern.compile("\\!\\[.*?\\]\\(.*\\)"));
         this.patterns.add(Pattern.compile("\\[(.*?)\\]\\((.*)\\)"));
-        this.patterns.add(Pattern.compile("<(\\b(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|])>"));
+        this.patterns
+                .add(Pattern.compile("<(\\b(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|])>"));
         this.patterns.add(Pattern.compile("&emsp;"));
         this.patterns.add(Pattern.compile("&nbsp;"));
-        //this.patterns.add(Pattern.compile("(\\b(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|])"));
+        this.patterns.add(Pattern.compile("(@\\w+#\\d+)(\\s|\n)"));
+        // this.patterns.add(Pattern.compile("(\\b(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|])"));
         normReplacements.add("&l$1&r");
         normReplacements.add("&l$2&r");
         normReplacements.add("&o$2&r");
@@ -253,7 +284,8 @@ final class Markdown {
         normReplacements.add("&L$1|$1&r");
         normReplacements.add("  ");
         normReplacements.add(" ");
-        //normReplacements.add("&L$1|$1&r");
+        normReplacements.add("&a$1&r");
+        // normReplacements.add("&L$1|$1&r");
     }
 
     public String parse() {
