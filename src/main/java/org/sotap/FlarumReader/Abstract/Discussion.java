@@ -56,7 +56,7 @@ public final class Discussion {
             }
         }
         this.content = replyList.get(0).content;
-        System.out.println(this.replyList.size());
+        this.author = replyList.get(0).author;
     }
 
     public PageBuilder getFirstPageBuilder() {
@@ -90,8 +90,6 @@ public final class Discussion {
         PageBuilder current = getFirstPageBuilder();
         int col = 1;
         int line = 5;
-        int spaceCol = 0;
-        int page = 1;
         int k = 0;
         TextBuilder tb;
         boolean bold = false;
@@ -204,7 +202,6 @@ public final class Discussion {
             if (italic)
                 tb = tb.style(ChatColor.ITALIC);
             current.add(tb.build());
-            System.out.println(c + ", " + col + ", " + line);
             col++;
             if (col == 13) {
                 col = 1;
@@ -215,7 +212,6 @@ public final class Discussion {
                 col = 1;
                 line = 1;
                 components.add(current.build());
-                page++;
                 current = new BookUtil.PageBuilder();
             }
             k++;
