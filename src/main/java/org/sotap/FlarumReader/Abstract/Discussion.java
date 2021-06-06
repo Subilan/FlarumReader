@@ -91,10 +91,17 @@ public final class Discussion {
                     underline = false;
                     italic = false;
                     if (link) {
+                        String currentLinkContentString = String.join("", currentLinkContent);
+                        String currentLinkHrefString = String.join("", currentLinkHref);
                         for (String c_ : currentLinkContent) {
+                            try {
                             tb = BookUtil.TextBuilder.of(c_).style(ChatColor.UNDERLINE)
                                     .onHover(BookUtil.HoverAction.showText("点击打开链接"))
-                                    .onClick(BookUtil.ClickAction.openUrl(String.join("", currentLinkHref)));
+                                    .onClick(BookUtil.ClickAction.openUrl(currentLinkHrefString.equals("url") ? currentLinkContentString : currentLinkHrefString));
+                            } catch (IllegalArgumentException e) {
+                                // invalid URL
+                                tb = BookUtil.TextBuilder.of(c_);
+                            }
                             current.add(tb.build());
                             col++;
                             if (col == 13) {
@@ -206,6 +213,7 @@ final class Markdown {
         this.patterns.add(Pattern.compile("`(.*?)`"));
         this.patterns.add(Pattern.compile("\\!\\[.*?\\]\\(.*?\\)"));
         this.patterns.add(Pattern.compile("\\[(.*?)\\]\\((.*?)\\)"));
+        this.patterns.add(Pattern.compile("<(.*?)>"));
         normReplacements.add("&l$1&r");
         normReplacements.add("&l$2&r");
         normReplacements.add("&o$2&r");
@@ -214,6 +222,7 @@ final class Markdown {
         normReplacements.add("$1");
         normReplacements.add("[图片]");
         normReplacements.add("&L$1|$2&r");
+        normReplacements.add("&L$1|$1&r");
     }
 
     public String parse() {
