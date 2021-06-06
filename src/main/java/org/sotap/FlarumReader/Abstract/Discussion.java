@@ -51,7 +51,8 @@ public final class Discussion {
                         .onHover(BookUtil.HoverAction.showText("在浏览器中打开"))
                         .onClick(BookUtil.ClickAction.openUrl("https://g.sotap.org/d/" + this.id)).build())
                 .newLine().add(BookUtil.TextBuilder.of("by " + this.author).color(ChatColor.GRAY).build()).newLine()
-                .add(BookUtil.TextBuilder.of(Calendars.toString(this.createTime)).color(ChatColor.GRAY).build()).newLine().newLine();
+                .add(BookUtil.TextBuilder.of(Calendars.toString(this.createTime)).color(ChatColor.GRAY).build())
+                .newLine().newLine();
     }
 
     public ItemStack getBook() {
@@ -66,6 +67,11 @@ public final class Discussion {
         boolean underline = false;
         boolean strikethrough = false;
         boolean italic = false;
+        boolean linkContent = false;
+        boolean linkHref = false;
+        boolean link = false;
+        List<String> currentLinkContent = new ArrayList<>();
+        List<String> currentLinkHref = new ArrayList<>();
         List<BaseComponent[]> components = new ArrayList<>();
         for (int i = 0; i < chars.length; i++) {
             String c = chars[i];
@@ -84,9 +90,50 @@ public final class Discussion {
                     strikethrough = false;
                     underline = false;
                     italic = false;
+                    if (link) {
+                        for (String c_ : currentLinkContent) {
+                            tb = BookUtil.TextBuilder.of(c_).style(ChatColor.UNDERLINE)
+                                    .onHover(BookUtil.HoverAction.showText("点击打开链接"))
+                                    .onClick(BookUtil.ClickAction.openUrl(String.join("", currentLinkHref)));
+                            current.add(tb.build());
+                            col++;
+                            if (col == 13) {
+                                col = 1;
+                                current = current.newLine();
+                                line++;
+                            }
+                            if (line == 15) {
+                                col = 1;
+                                line = 1;
+                                components.add(current.build());
+                                current = new BookUtil.PageBuilder();
+                            }
+                        }
+                        link = false;
+                        currentLinkContent.clear();
+                        currentLinkHref.clear();
+                    }
+                }
+                if (t.equals("L")) {
+                    link = true;
+                    linkContent = true;
                 }
 
                 i += 1;
+                continue;
+            }
+            if (link) {
+                if (c.equals("|")) {
+                    linkHref = true;
+                    linkContent = false;
+                    continue;
+                }
+                if (linkContent) {
+                    currentLinkContent.add(c);
+                }
+                if (linkHref) {
+                    currentLinkHref.add(c);
+                }
                 continue;
             }
             if (c.equals("\n")) {
@@ -158,6 +205,7 @@ final class Markdown {
         this.patterns.add(Pattern.compile("<u>(.*?)</u>"));
         this.patterns.add(Pattern.compile("`(.*?)`"));
         this.patterns.add(Pattern.compile("\\!\\[.*?\\]\\(.*?\\)"));
+        this.patterns.add(Pattern.compile("\\[(.*?)\\]\\((.*?)\\)"));
         normReplacements.add("&l$1&r");
         normReplacements.add("&l$2&r");
         normReplacements.add("&o$2&r");
@@ -165,6 +213,7 @@ final class Markdown {
         normReplacements.add("&n$1&r");
         normReplacements.add("$1");
         normReplacements.add("[图片]");
+        normReplacements.add("&L$1|$2&r");
     }
 
     public String parse() {
