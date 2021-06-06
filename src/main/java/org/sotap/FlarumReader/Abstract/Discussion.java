@@ -36,13 +36,27 @@ public final class Discussion {
         JSONObject current;
         for (int i = 0; i < included.length(); i++) {
             current = included.getJSONObject(i);
+            JSONObject currentAttr;
             if (current.getString("type").equals("posts")) {
-                if (current.getJSONObject("attributes").getString("contentType").equals("comment")) {
+                currentAttr = current.getJSONObject("attributes");
+                if (currentAttr.has("isHidden")) {
+                    if (currentAttr.getBoolean("isHidden")) {
+                        if (i == 0) {
+                            current.put("attributes", new JSONObject());
+                            current.getJSONObject("attributes").put("content", "*内容已删除*");
+                            current.getJSONObject("attributes").put("createdAt", currentAttr.getString("createdAt"));
+                            replyList.add(new Reply(current));
+                        }
+                        continue;
+                    }
+                }
+                if (currentAttr.getString("contentType").equals("comment")) {
                     replyList.add(new Reply(current));
                 }
             }
         }
         this.content = replyList.get(0).content;
+        System.out.println(this.replyList.size());
     }
 
     public PageBuilder getFirstPageBuilder() {
@@ -56,12 +70,29 @@ public final class Discussion {
     }
 
     public ItemStack getBook() {
-        Markdown md = new Markdown(this.content);
+        String finalContent = this.content;
+        if (this.replyList.size() > 1) {
+            finalContent += "\n\n---\n**" + (this.replyList.size() - 1) +" 条回复**\n---\n";
+            Reply current;
+            for (int i = 1; i < this.replyList.size(); i++) {
+               current = replyList.get(i);
+               finalContent += "\n\n" + i + ". **" + current.author + "**\n" + current.content;
+            }
+            
+            if (this.replyList.size() > 10) {
+                finalContent += "\n\n*由于 API 限制，回复可能显示不完整。[点击前往原帖查看](https://g.sotap.org/d/" + this.id + ")*";
+            }
+        }
+        System.out.println(finalContent);
+        Markdown md = new Markdown(finalContent);
         String[] chars = md.parse().split("(?!^)");
+        System.out.println(String.join("", chars));
         PageBuilder current = getFirstPageBuilder();
         int col = 1;
         int line = 5;
         int spaceCol = 0;
+        int page = 1;
+        int k = 0;
         TextBuilder tb;
         boolean bold = false;
         boolean underline = false;
@@ -74,9 +105,13 @@ public final class Discussion {
         List<String> currentLinkHref = new ArrayList<>();
         List<BaseComponent[]> components = new ArrayList<>();
         for (int i = 0; i < chars.length; i++) {
-            String c = chars[i];
+            if (k == chars.length && line < 15) {
+                components.add(current.build());
+                break;
+            }
+            String c = chars[k];
             if (c.equals("&")) {
-                String t = chars[i + 1];
+                String t = chars[k + 1];
                 if (t.equals("l"))
                     bold = true;
                 if (t.equals("m"))
@@ -126,10 +161,12 @@ public final class Discussion {
                     linkContent = true;
                 }
 
-                i += 1;
+                // skip next character, as is already used in this context.
+                k += 2;
                 continue;
             }
             if (link) {
+                k++;
                 if (c.equals("|")) {
                     linkHref = true;
                     linkContent = false;
@@ -144,15 +181,17 @@ public final class Discussion {
                 continue;
             }
             if (c.equals("\n")) {
-                current = current.newLine();
                 col = 1;
                 line++;
-                if (line == 14) {
+                if (line == 15) {
                     col = 1;
                     line = 1;
                     components.add(current.build());
                     current = new BookUtil.PageBuilder();
+                } else {
+                    current = current.newLine();
                 }
+                k++;
                 continue;
             }
             tb = BookUtil.TextBuilder.of(c);
@@ -165,15 +204,7 @@ public final class Discussion {
             if (italic)
                 tb = tb.style(ChatColor.ITALIC);
             current.add(tb.build());
-            if (c.equals(" ")) {
-                if (spaceCol == 4) {
-                    col++;
-                    spaceCol = 0;
-                } else {
-                    spaceCol++;
-                }
-                continue;
-            }
+            System.out.println(c + ", " + col + ", " + line);
             col++;
             if (col == 13) {
                 col = 1;
@@ -184,12 +215,10 @@ public final class Discussion {
                 col = 1;
                 line = 1;
                 components.add(current.build());
+                page++;
                 current = new BookUtil.PageBuilder();
             }
-            if (i == chars.length - 1 && line < 15) {
-                components.add(current.build());
-                break;
-            }
+            k++;
         }
         return BookUtil.writtenBook().pages(components).build();
     }
@@ -205,15 +234,18 @@ final class Markdown {
         this.input = input;
         this.patterns = new ArrayList<Pattern>();
         this.normReplacements = new ArrayList<>();
-        this.patterns.add(Pattern.compile("(?m)^#{1,6}(?!#)(.*)"));
+        this.patterns.add(Pattern.compile("(?m)^#{1,6}(?!#)(.*?)"));
         this.patterns.add(Pattern.compile("(\\*\\*|__)(.*?)(\\*\\*|__)"));
         this.patterns.add(Pattern.compile("(\\*|_)(.*?)(\\*|_)"));
         this.patterns.add(Pattern.compile("~~(.*?)~~"));
         this.patterns.add(Pattern.compile("<u>(.*?)</u>"));
         this.patterns.add(Pattern.compile("`(.*?)`"));
-        this.patterns.add(Pattern.compile("\\!\\[.*?\\]\\(.*?\\)"));
-        this.patterns.add(Pattern.compile("\\[(.*?)\\]\\((.*?)\\)"));
-        this.patterns.add(Pattern.compile("<(.*?)>"));
+        this.patterns.add(Pattern.compile("\\!\\[.*?\\]\\(.*\\)"));
+        this.patterns.add(Pattern.compile("\\[(.*?)\\]\\((.*)\\)"));
+        this.patterns.add(Pattern.compile("<(\\b(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|])>"));
+        this.patterns.add(Pattern.compile("&emsp;"));
+        this.patterns.add(Pattern.compile("&nbsp;"));
+        //this.patterns.add(Pattern.compile("(\\b(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|])"));
         normReplacements.add("&l$1&r");
         normReplacements.add("&l$2&r");
         normReplacements.add("&o$2&r");
@@ -223,6 +255,9 @@ final class Markdown {
         normReplacements.add("[图片]");
         normReplacements.add("&L$1|$2&r");
         normReplacements.add("&L$1|$1&r");
+        normReplacements.add("  ");
+        normReplacements.add(" ");
+        //normReplacements.add("&L$1|$1&r");
     }
 
     public String parse() {
