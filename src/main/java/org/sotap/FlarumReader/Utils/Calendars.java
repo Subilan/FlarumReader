@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 
 public final class Calendars {
     public final static String UTC_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ssXXX";
+    public final static String DATE_FORMAT_PATTERN = "yyyy/MM/dd HH:mm:ss";
 
     public static Date parse(String input, String pattern) {
         SimpleDateFormat sdf = new SimpleDateFormat(pattern);
@@ -15,5 +16,10 @@ public final class Calendars {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static String toString(Date input) {
+        SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT_PATTERN);
+        return sdf.format(input);
     }
 }
