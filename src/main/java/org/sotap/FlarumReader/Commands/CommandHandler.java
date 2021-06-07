@@ -158,7 +158,7 @@ public final class CommandHandler implements CommandExecutor {
 			this.sender = sender;
 			l = new Login(senderName);
 
-			if (!args[0].equals("login") && !args[0].equals("l")) {
+			if (!args[0].equals("login")) {
 				if (!l.valid()) {
 					LogUtil.failed("你需要登录才能进行此操作。", sender);
 					return true;
