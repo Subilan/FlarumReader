@@ -232,13 +232,14 @@ public final class Discussion {
                 tb = tb.color(ChatColor.YELLOW);
 
             current.add(tb.build());
+
             if (k + 1 < chars.length) {
                 lineLimit -= Markdown.getCharPercentage(c, bold);
+                System.out.println(lineLimit + ", " + c);
                 if (lineLimit < Markdown.getCharPercentage(chars[k + 1], true)) {
                     lineLimit = 100.0;
                     current = current.newLine();
                     line++;
-                    System.out.println(c + "," + line);
                 }
                 if (line == 15) {
                     lineLimit = 100.0;
@@ -312,9 +313,9 @@ final class Markdown {
 
     public static int getCharType(String ch) {
         if (Pattern.compile("[\u4E00-\u9FA5]").matcher(ch).find()
-                || Pattern.compile("(、|。|-|\\+|\\*)").matcher(ch).find())
+                || Pattern.compile("(、|。|-|\\+|\\*|_|@)").matcher(ch).find())
             return 1;
-        if (Pattern.compile("[A-Z]").matcher(ch).find())
+        if (Pattern.compile("[A-Z#]").matcher(ch).find())
             return 2;
         if (Pattern.compile("[a-z]").matcher(ch).find())
             return 3;
