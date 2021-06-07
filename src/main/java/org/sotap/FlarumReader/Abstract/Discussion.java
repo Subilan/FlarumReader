@@ -88,9 +88,9 @@ public final class Discussion {
         String[] chars = md.parse().split("(?!^)");
         System.out.println(String.join("", chars));
         PageBuilder current = getFirstPageBuilder();
-        int col = 1;
         int line = 5;
         int k = 0;
+        double lineLimit = 100.0;
         TextBuilder tb;
         boolean bold = false;
         boolean underline = false;
@@ -150,14 +150,21 @@ public final class Discussion {
                                 tb = BookUtil.TextBuilder.of(c_);
                             }
                             current.add(tb.build());
-                            col++;
-                            if (col == 13) {
-                                col = 1;
-                                current = current.newLine();
-                                line++;
+                            lineLimit -= Markdown.getCharPercentage(c_);
+                            if (k + 1 < chars.length) {
+                                if (lineLimit < Markdown.getCharPercentage(chars[k + 1])) {
+                                    lineLimit = 100.0;
+                                    current = current.newLine();
+                                    line++;
+                                }
+                            } else {
+                                if (line < 15) {
+                                    components.add(current.build());
+                                    break;
+                                }
                             }
                             if (line == 15) {
-                                col = 1;
+                                lineLimit = 100.0;
                                 line = 1;
                                 components.add(current.build());
                                 current = new BookUtil.PageBuilder();
@@ -193,10 +200,10 @@ public final class Discussion {
                 continue;
             }
             if (c.equals("\n")) {
-                col = 1;
+                lineLimit = 100.0;
                 line++;
                 if (line == 15) {
-                    col = 1;
+                    lineLimit = 100.0;
                     line = 1;
                     components.add(current.build());
                     current = new BookUtil.PageBuilder();
@@ -222,28 +229,27 @@ public final class Discussion {
             if (yellow)
                 tb = tb.color(ChatColor.YELLOW);
             current.add(tb.build());
-            col++;
-            if (col == 13) {
-                col = 1;
-                current = current.newLine();
-                line++;
+            lineLimit -= Markdown.getCharPercentage(c);
+            System.out.println(c + ", " + Markdown.getCharType(c) + ", " + lineLimit);
+            if (k + 1 < chars.length) {
+                if (lineLimit < Markdown.getCharPercentage(chars[k + 1])) {
+                    lineLimit = 100.0;
+                    current = current.newLine();
+                    line++;
+                }
+            } else {
+                if (line < 15) {
+                    components.add(current.build());
+                    break;
+                }
             }
             if (line == 15) {
-                col = 1;
+                lineLimit = 100.0;
                 line = 1;
                 components.add(current.build());
                 current = new BookUtil.PageBuilder();
             }
             k++;
-            // not cool :(
-            try {
-                if (k == chars.length && line < 15) {
-                    components.add(current.build());
-                    break;
-                }
-            } catch (IndexOutOfBoundsException e) {
-
-            }
         }
         return BookUtil.writtenBook().pages(components).build();
     }
@@ -272,6 +278,7 @@ final class Markdown {
         this.patterns.add(Pattern.compile("&emsp;"));
         this.patterns.add(Pattern.compile("&nbsp;"));
         this.patterns.add(Pattern.compile("(@\\w+#\\d+)(\\s|\n)"));
+        this.patterns.add(Pattern.compile("(@\\w+)(\\s|\n)"));
         // this.patterns.add(Pattern.compile("(\\b(https?|ftp|file)://[-a-zA-Z0-9+&@#/%?=~_|!:,.;]*[-a-zA-Z0-9+&@#/%=~_|])"));
         normReplacements.add("&l$1&r");
         normReplacements.add("&l$2&r");
@@ -285,6 +292,7 @@ final class Markdown {
         normReplacements.add("  ");
         normReplacements.add(" ");
         normReplacements.add("&a$1&r");
+        normReplacements.add("&a$1&r");
         // normReplacements.add("&L$1|$1&r");
     }
 
@@ -296,6 +304,48 @@ final class Markdown {
             i++;
         }
         return this.output;
+    }
+
+    public static int getCharType(String ch) {
+        if (Pattern.compile("[\u4E00-\u9FA5]").matcher(ch).find() || Pattern.compile("(、|。|-|\\+|\\*)").matcher(ch).find())
+            return 1;
+        if (Pattern.compile("[A-Z]").matcher(ch).find())
+            return 2;
+        if (Pattern.compile("[a-z]").matcher(ch).find())
+            return 3;
+        if (Pattern.compile("\\d").matcher(ch).find())
+            return 4;
+        if (Pattern.compile("\\p{P}").matcher(ch).find())
+            return 5;
+        if (Pattern.compile("\\p{Z}").matcher(ch).find())
+            return 6;
+        return 0;
+    }
+
+    public static double getCharPercentage(String ch) {
+        int charType = getCharType(ch);
+        switch (charType) {
+            case 1:
+                return 8.33;
+
+            case 2:
+                return 5.55;
+
+            case 3:
+                return 5.0;
+
+            case 4:
+                return 5.0;
+
+            case 5:
+                return 1.75;
+
+            case 6:
+                return 3.45;
+
+            default:
+                return 7.0;
+        }
     }
 }
 
