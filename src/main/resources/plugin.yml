@@ -17,10 +17,12 @@ permissions:
     default: true
   flarumreader.logout:
     default: true
-  flarumreader.setpassword:
+  flarumreader.view:
     default: true
-  flarumreader.setusername:
+  flarumreader.reply:
     default: true
-  flarumreader.open:
+  flarumreader.list:
     default: true
+  flarumreader.reload:
+    default: op
 
