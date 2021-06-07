@@ -1,6 +1,7 @@
 package org.sotap.FlarumReader.Commands;
 
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.List;
 import org.apache.http.HttpResponse;
 import org.apache.http.concurrent.FutureCallback;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -15,6 +17,8 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BookMeta;
 import org.json.JSONObject;
 import org.sotap.FlarumReader.Main;
 import org.sotap.FlarumReader.Abstract.Discussion;
@@ -40,8 +44,51 @@ public final class CommandHandler implements CommandExecutor {
 		this.currentLists = new MemoryConfiguration();
 	}
 
-	private boolean showDiscussion(int index) {
-		String id = currentLists.getString(senderName + "." + index);
+	private boolean replyDiscussion(int index, boolean isId, String content) {
+		if (!(sender instanceof Player)) {
+			LogUtil.failed("操作必须由玩家进行。", sender);
+			return true;
+		}
+		String currentListId = currentLists.getString(senderName + "." + index);
+		if (currentListId == null && !isId) {
+			LogUtil.failed("你必须查看某一页面才能使用数字序号。", sender);
+			return true;
+		}
+		String id = isId ? Integer.toString(index) : currentListId;
+		req.createReply(l.getToken(), id, content, new FutureCallback<HttpResponse>(){
+			public void completed(final HttpResponse re) {
+				JSONObject r = Requests.toJSON(re.getEntity());
+				if (!r.has("data")) {
+					LogUtil.failed("发送失败，请联系管理员。", sender);
+					System.out.println("fr-debug: " + r.toString());
+				} else {
+					LogUtil.success("发送成功。原帖 &e&nhttps://g.sotap.org/d/" + id, sender);
+				}
+			}
+
+			public void failed(final Exception e) {
+				e.printStackTrace();
+				LogUtil.failed("指令执行时出现问题。", sender);
+			}
+
+			public void cancelled() {
+				LogUtil.warn("任务被中断。", sender);
+			}
+		});
+		return true;
+	}
+
+	private boolean showDiscussion(int index, boolean isId) {
+		if (!(sender instanceof Player)) {
+			LogUtil.failed("操作必须由玩家进行。", sender);
+			return true;
+		}
+		String currentListId = currentLists.getString(senderName + "." + index);
+		if (currentListId == null && !isId) {
+			LogUtil.failed("你必须查看某一页面才能使用数字序号。", sender);
+			return true;
+		}
+		String id = isId ? Integer.toString(index) : currentListId;
 		req.getDiscussion(l.getToken(), id, new FutureCallback<HttpResponse>() {
 			public void completed(final HttpResponse re) {
 				JSONObject r = Requests.toJSON(re.getEntity());
@@ -72,14 +119,16 @@ public final class CommandHandler implements CommandExecutor {
 				MainPosts mps = new MainPosts(l.getToken(), r);
 				List<MainPost> all = mps.getAll();
 				MainPost current;
-				if (all.size() > 0) LogUtil.log("&e-=-=- &a&l第 &b" + page + " &a&l页 &r&e-=-=-", sender);
+				if (all.size() > 0)
+					LogUtil.log("&e===== &a&l第 &b" + page + " &a&l页 &r&e=====", sender);
 				for (int i = 0; i < all.size(); i++) {
 					current = all.get(i);
 					currentLists.set(senderName + "." + (i + 1), current.id);
 					LogUtil.mainThreadTitle(current.title, Files.getUsernameById(current.authorId), sender,
 							"[&e" + (i + 1) + "&r] ");
 				}
-				if (all.size() > 0) LogUtil.log("&e-=-=-=-=-=-=-=-=-", sender);
+				if (all.size() > 0)
+					LogUtil.log("&e=================", sender);
 				if (all.size() < 10) {
 					if (all.size() > 0) {
 						LogUtil.log("&e已经是最后一页。", sender);
@@ -200,18 +249,92 @@ public final class CommandHandler implements CommandExecutor {
 
 				case "view":
 				case "v": {
-					try {
-						int index = Integer.parseInt(args[1]);
-						if (!(index >= 1 && index <= 10)) {
-							LogUtil.failed("序号必须在 1 到 10 之间（包含端点）。", sender);
-							return true;
+					if (args.length < 2) {
+						LogUtil.failed("必须指定一个序号或帖子 ID。", sender);
+						return true;
+					}
+					if (args[1].startsWith("#")) {
+						try {
+							int id = Integer.parseInt(args[1].substring(1));
+							LogUtil.info("加载中...", sender);
+							return showDiscussion(id, true);
+						} catch (NumberFormatException e) {
+							LogUtil.failed("无效的帖子 ID。", sender);
 						}
-						LogUtil.info("加载中...", sender);
-						return showDiscussion(index);
-					} catch (NumberFormatException e) {
-						LogUtil.failed("无效的序号。", sender);
+					} else {
+						try {
+							int index = Integer.parseInt(args[1]);
+							if (!(index >= 1 && index <= 10)) {
+								LogUtil.failed("序号必须在 1 到 10 之间（包含端点）。", sender);
+								return true;
+							}
+							LogUtil.info("加载中...", sender);
+							return showDiscussion(index, false);
+						} catch (NumberFormatException e) {
+							LogUtil.failed("无效的序号。", sender);
+						}
 					}
 					break;
+				}
+
+				case "reply":
+				case "r": {
+					if (args.length < 2) {
+						LogUtil.failed("必须指定一个序号或帖子 ID。", sender);
+						return true;
+					}
+					if (args.length < 3) {
+						LogUtil.failed("必须指定发帖内容。", sender);
+						return true;
+					}
+					String content = "";
+					if (args[2].equals("book")) {
+						if (!(sender instanceof Player)) {
+							LogUtil.failed("操作必须由玩家进行。", sender);
+							return true;
+						}
+						Player p = (Player) sender;
+						ItemStack book = p.getInventory().getItemInMainHand();
+						if (book.getType() == Material.WRITTEN_BOOK || book.getType() == Material.WRITABLE_BOOK) {
+							BookMeta meta = (BookMeta) book.getItemMeta();
+							List<String> contents = meta.getPages();
+							content = String.join("", contents);
+						} else {
+							LogUtil.failed("手持物品须为已（未）署名的书。", sender);
+							return true;
+						}
+					} else {
+						List<String> contentList = Arrays.asList(args).subList(2, args.length);
+						for (String t : contentList) {
+							content += " ";
+							content += t;
+						}
+					}
+					if (content.trim().isEmpty()) {
+						LogUtil.failed("内容不能为空。", sender);
+						return true;
+					}
+					if (args[1].startsWith("#")) {
+						try {
+							int id = Integer.parseInt(args[1].substring(1));
+							LogUtil.info("发送中...", sender);
+							return replyDiscussion(id, true, content);
+						} catch (NumberFormatException e) {
+							LogUtil.failed("无效的帖子 ID。", sender);
+						}
+					} else {
+						try {
+							int index = Integer.parseInt(args[1]);
+							if (!(index >= 1 && index <= 10)) {
+								LogUtil.failed("序号必须在 1 到 10 之间（包含端点）。", sender);
+								return true;
+							}
+							LogUtil.info("发送中...", sender);
+							return replyDiscussion(index, false, content);
+						} catch (NumberFormatException e) {
+							LogUtil.failed("无效的序号。", sender);
+						}
+					}
 				}
 
 				default: {
