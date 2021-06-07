@@ -90,7 +90,7 @@ public final class CommandHandler implements CommandExecutor {
 			return true;
 		}
 		String id = isId ? Integer.toString(index) : currentListId;
-		req.getDiscussion(l.getToken(), id, new FutureCallback<HttpResponse>() {
+		req.getDiscussion(id, new FutureCallback<HttpResponse>() {
 			public void completed(final HttpResponse re) {
 				JSONObject r = Requests.toJSON(re.getEntity());
 				try {

@@ -92,16 +92,29 @@ public final class Requests {
         }
     }
 
-    public void getDiscussion(String token, String id, FutureCallback<HttpResponse> callback) {
-        CloseableHttpAsyncClient client = get();
-        client.start();
-        try {
-            HttpGet get = new HttpGet("https://g.sotap.org/api/discussions/" + id);
-            get.addHeader("Authorization", "Token " + token);
-            client.execute(get, callback);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public void getDiscussion(String id, FutureCallback<HttpResponse> callback) {
+        this.login("Subilan", "subilan1999", new FutureCallback<HttpResponse>() {
+            public void completed(final HttpResponse re) {
+                String token = toJSON(re.getEntity()).getString("token");
+                CloseableHttpAsyncClient client = get();
+                client.start();
+                try {
+                    HttpGet get = new HttpGet("https://g.sotap.org/api/discussions/" + id);
+                    get.addHeader("Authorization", "Token " + token);
+                    client.execute(get, callback);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            public void failed(final Exception e) {
+                e.printStackTrace();
+            }
+
+            public void cancelled() {
+                return;
+            }
+        });
     }
 
     public void getUser(String token, String identifier, FutureCallback<HttpResponse> callback) {
