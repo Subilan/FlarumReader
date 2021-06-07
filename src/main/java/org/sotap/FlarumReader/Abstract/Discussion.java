@@ -235,7 +235,6 @@ public final class Discussion {
 
             if (k + 1 < chars.length) {
                 lineLimit -= Markdown.getCharPercentage(c, bold);
-                System.out.println(lineLimit + ", " + c);
                 if (lineLimit < Markdown.getCharPercentage(chars[k + 1], true)) {
                     lineLimit = 100.0;
                     current = current.newLine();

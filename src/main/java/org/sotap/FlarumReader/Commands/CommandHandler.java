@@ -72,14 +72,14 @@ public final class CommandHandler implements CommandExecutor {
 				MainPosts mps = new MainPosts(l.getToken(), r);
 				List<MainPost> all = mps.getAll();
 				MainPost current;
-				LogUtil.log("&e-=-=- &a&l第 &b" + page + " &a&l页 &r&e-=-=-", sender);
+				if (all.size() > 0) LogUtil.log("&e-=-=- &a&l第 &b" + page + " &a&l页 &r&e-=-=-", sender);
 				for (int i = 0; i < all.size(); i++) {
 					current = all.get(i);
 					currentLists.set(senderName + "." + (i + 1), current.id);
 					LogUtil.mainThreadTitle(current.title, Files.getUsernameById(current.authorId), sender,
 							"[&e" + (i + 1) + "&r] ");
 				}
-				LogUtil.log("&e-=-=-=-=-=-=-=-=-", sender);
+				if (all.size() > 0) LogUtil.log("&e-=-=-=-=-=-=-=-=-", sender);
 				if (all.size() < 10) {
 					if (all.size() > 0) {
 						LogUtil.log("&e已经是最后一页。", sender);
@@ -190,6 +190,7 @@ public final class CommandHandler implements CommandExecutor {
 							LogUtil.failed("页面序号不能小于 1。", sender);
 							return true;
 						}
+						LogUtil.info("加载中...", sender);
 						return showList(page);
 					} catch (NumberFormatException e) {
 						LogUtil.failed("页面序号只能是正整数。", sender);
@@ -205,6 +206,7 @@ public final class CommandHandler implements CommandExecutor {
 							LogUtil.failed("序号必须在 1 到 10 之间（包含端点）。", sender);
 							return true;
 						}
+						LogUtil.info("加载中...", sender);
 						return showDiscussion(index);
 					} catch (NumberFormatException e) {
 						LogUtil.failed("无效的序号。", sender);
