@@ -18,9 +18,15 @@ import org.json.JSONObject;
 public final class Requests {
     public static JSONObject empty = new JSONObject();
     public CookieStore cs;
+    public String adminName;
+    public String adminPassword;
+    public String site;
 
     public Requests() {
         this.cs = new BasicCookieStore();
+        this.adminName = Files.config.getString("admin-name");
+        this.adminPassword = Files.config.getString("admin-password");
+        this.site = Files.config.getString("site");
     }
 
     private CloseableHttpAsyncClient get() {
@@ -37,7 +43,7 @@ public final class Requests {
         data.put("password", password);
         data.put("lifetime", 604800);
         try {
-            HttpPost post = new HttpPost("https://g.sotap.org/api/token");
+            HttpPost post = new HttpPost(this.site + "/api/token");
             StringEntity params = new StringEntity(data.toString());
             post.setHeader("content-type", "application/json");
             post.setEntity(params);
@@ -51,8 +57,7 @@ public final class Requests {
         CloseableHttpAsyncClient client = get();
         client.start();
         try {
-            HttpGet get = new HttpGet(
-                    "https://g.sotap.org/api/discussions?page[limit]=10&page[offset]=" + (page - 1) * 10);
+            HttpGet get = new HttpGet(this.site + "/api/discussions?page[limit]=10&page[offset]=" + (page - 1) * 10);
             client.execute(get, callback);
         } catch (Exception e) {
             e.printStackTrace();
@@ -81,7 +86,7 @@ public final class Requests {
         innerData.put("type", "posts");
         JSONObject data = new JSONObject().put("data", innerData);
         try {
-            HttpPost post = new HttpPost("https://g.sotap.org/api/posts");
+            HttpPost post = new HttpPost(this.site + "/api/posts");
             StringEntity params = new StringEntity(data.toString(), "UTF-8");
             post.addHeader("content-type", "application/json; charset=UTF-8");
             post.setEntity(params);
@@ -93,13 +98,13 @@ public final class Requests {
     }
 
     public void getDiscussion(String id, FutureCallback<HttpResponse> callback) {
-        this.login("Subilan", "subilan1999", new FutureCallback<HttpResponse>() {
+        this.login(this.adminName, this.adminPassword, new FutureCallback<HttpResponse>() {
             public void completed(final HttpResponse re) {
                 String token = toJSON(re.getEntity()).getString("token");
                 CloseableHttpAsyncClient client = get();
                 client.start();
                 try {
-                    HttpGet get = new HttpGet("https://g.sotap.org/api/discussions/" + id);
+                    HttpGet get = new HttpGet(site + "/api/discussions/" + id);
                     get.addHeader("Authorization", "Token " + token);
                     client.execute(get, callback);
                 } catch (Exception e) {
@@ -121,7 +126,7 @@ public final class Requests {
         CloseableHttpAsyncClient client = get();
         client.start();
         try {
-            HttpGet get = new HttpGet("https://g.sotap.org/api/users/" + identifier);
+            HttpGet get = new HttpGet(this.site + "/api/users/" + identifier);
             get.addHeader("Authorization", "Token " + token);
             client.execute(get, callback);
         } catch (Exception e) {
@@ -130,7 +135,7 @@ public final class Requests {
     }
 
     public void getUserMap() {
-        this.login("Subilan", "subilan1999", new FutureCallback<HttpResponse>() {
+        this.login(this.adminName, this.adminPassword, new FutureCallback<HttpResponse>() {
             public void completed(final HttpResponse re) {
                 String token = toJSON(re.getEntity()).getString("token");
                 CloseableHttpAsyncClient client = get();
@@ -138,8 +143,7 @@ public final class Requests {
                 Integer offset = 0;
                 Integer limit = 50;
                 while (offset < 500) {
-                    HttpGet get = new HttpGet(
-                            "https://g.sotap.org/api/users?page[limit]=" + limit + "&page[offset]=" + offset);
+                    HttpGet get = new HttpGet(site + "/api/users?page[limit]=" + limit + "&page[offset]=" + offset);
                     get.addHeader("Authorization", "Token " + token);
                     client.execute(get, new FutureCallback<HttpResponse>() {
                         public void completed(final HttpResponse re) {

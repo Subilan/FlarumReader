@@ -24,6 +24,7 @@ public final class Discussion {
     public Date createTime;
     public List<Reply> replyList;
     public String content;
+    public String site;
 
     public Discussion(JSONObject object) {
         JSONObject base = object.getJSONObject("data");
@@ -57,13 +58,14 @@ public final class Discussion {
         }
         this.content = replyList.get(0).content;
         this.author = replyList.get(0).author;
+        this.site = Files.config.getString("site");
     }
 
     public PageBuilder getFirstPageBuilder() {
         return new BookUtil.PageBuilder()
                 .add(BookUtil.TextBuilder.of(this.title).style(ChatColor.BOLD)
                         .onHover(BookUtil.HoverAction.showText("在浏览器中打开"))
-                        .onClick(BookUtil.ClickAction.openUrl("https://g.sotap.org/d/" + this.id)).build())
+                        .onClick(BookUtil.ClickAction.openUrl(site + "/d/" + this.id)).build())
                 .newLine().add(BookUtil.TextBuilder.of("by " + this.author).color(ChatColor.GRAY).build()).newLine()
                 .add(BookUtil.TextBuilder.of(Calendars.toString(this.createTime)).color(ChatColor.GRAY).build())
                 .newLine().newLine();
@@ -80,7 +82,7 @@ public final class Discussion {
             }
 
             if (this.replyList.size() > 10) {
-                finalContent += "\n\n*由于 API 限制，回复可能显示不完整。[点击前往原帖查看](https://g.sotap.org/d/" + this.id + ")*";
+                finalContent += "\n\n*由于 API 限制，回复可能显示不完整。[点击前往原帖查看](" + site + "/d/" + this.id + ")*";
             }
         }
         Markdown md = new Markdown(finalContent);

@@ -14,6 +14,7 @@ public final class Main extends JavaPlugin {
         saveDefaultConfig();
         LogUtil.init(this);
         Files.init(this);
+        LogUtil.info("初始化用户表中...");
         Files.updateUserMap();
         Objects.requireNonNull(Bukkit.getPluginCommand("flarumreader")).setExecutor(new CommandHandler(this));
         // Objects.requireNonNull(Bukkit.getPluginCommand("flarumreader")).setTabCompleter(new Tab());

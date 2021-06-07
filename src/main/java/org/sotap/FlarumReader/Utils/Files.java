@@ -45,7 +45,6 @@ public final class Files {
     }
 
     public static void updateUserMap() {
-        LogUtil.info("初始化用户表中...");
         Requests req = new Requests();
         req.getUserMap();
     }
