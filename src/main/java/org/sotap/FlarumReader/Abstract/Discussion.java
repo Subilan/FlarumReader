@@ -352,7 +352,7 @@ final class Markdown {
                 break;
 
             case 4:
-                val = 5.0;
+                val = 5.5;
                 break;
 
             case 5:
