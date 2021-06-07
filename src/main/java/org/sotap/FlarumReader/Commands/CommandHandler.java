@@ -59,7 +59,8 @@ public final class CommandHandler implements CommandExecutor {
 			public void completed(final HttpResponse re) {
 				JSONObject r = Requests.toJSON(re.getEntity());
 				if (!r.has("data")) {
-					LogUtil.failed("发送失败，请联系管理员。", sender);
+					String reason = r.getJSONArray("errors").getJSONObject(0).getString("code");
+					LogUtil.failed("发送失败。原因： &c" + reason, sender);
 					System.out.println("fr-debug: " + r.toString());
 				} else {
 					LogUtil.success("发送成功。原帖 &e&nhttps://g.sotap.org/d/" + id, sender);
