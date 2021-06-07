@@ -85,7 +85,6 @@ public final class Discussion {
         }
         Markdown md = new Markdown(finalContent);
         String[] chars = md.parse().split("(?!^)");
-        System.out.println(String.join("", chars));
         PageBuilder current = getFirstPageBuilder();
         // bugnote
         // 第一页由于标题+作者+日期会占用 3~4 行（标题 1~2 行，作者 1 行，日期 1 行）所以正文从（抽象）第 6 行开始。
