@@ -83,12 +83,14 @@ public final class Discussion {
                 finalContent += "\n\n*由于 API 限制，回复可能显示不完整。[点击前往原帖查看](https://g.sotap.org/d/" + this.id + ")*";
             }
         }
-        System.out.println(finalContent);
         Markdown md = new Markdown(finalContent);
         String[] chars = md.parse().split("(?!^)");
         System.out.println(String.join("", chars));
         PageBuilder current = getFirstPageBuilder();
-        int line = 5;
+        // bugnote
+        // 第一页由于标题+作者+日期会占用 3~4 行（标题 1~2 行，作者 1 行，日期 1 行）所以正文从（抽象）第 6 行开始。
+        // 如果设置小于 6 会导致标题占 2 行的帖子第一页内容少一行。2021/06/07
+        int line = 6;
         int k = 0;
         double lineLimit = 100.0;
         TextBuilder tb;
@@ -150,9 +152,9 @@ public final class Discussion {
                                 tb = BookUtil.TextBuilder.of(c_);
                             }
                             current.add(tb.build());
-                            lineLimit -= Markdown.getCharPercentage(c_);
+                            lineLimit -= Markdown.getCharPercentage(c_, true);
                             if (k + 1 < chars.length) {
-                                if (lineLimit < Markdown.getCharPercentage(chars[k + 1])) {
+                                if (lineLimit < Markdown.getCharPercentage(chars[k + 1], true)) {
                                     lineLimit = 100.0;
                                     current = current.newLine();
                                     line++;
@@ -228,14 +230,21 @@ public final class Discussion {
                 tb = tb.color(ChatColor.AQUA);
             if (yellow)
                 tb = tb.color(ChatColor.YELLOW);
+
             current.add(tb.build());
-            lineLimit -= Markdown.getCharPercentage(c);
-            System.out.println(c + ", " + Markdown.getCharType(c) + ", " + lineLimit);
             if (k + 1 < chars.length) {
-                if (lineLimit < Markdown.getCharPercentage(chars[k + 1])) {
+                lineLimit -= Markdown.getCharPercentage(c, bold);
+                if (lineLimit < Markdown.getCharPercentage(chars[k + 1], true)) {
                     lineLimit = 100.0;
                     current = current.newLine();
                     line++;
+                    System.out.println(c + "," + line);
+                }
+                if (line == 15) {
+                    lineLimit = 100.0;
+                    line = 1;
+                    components.add(current.build());
+                    current = new BookUtil.PageBuilder();
                 }
             } else {
                 if (line < 15) {
@@ -243,12 +252,7 @@ public final class Discussion {
                     break;
                 }
             }
-            if (line == 15) {
-                lineLimit = 100.0;
-                line = 1;
-                components.add(current.build());
-                current = new BookUtil.PageBuilder();
-            }
+
             k++;
         }
         return BookUtil.writtenBook().pages(components).build();
@@ -307,7 +311,8 @@ final class Markdown {
     }
 
     public static int getCharType(String ch) {
-        if (Pattern.compile("[\u4E00-\u9FA5]").matcher(ch).find() || Pattern.compile("(、|。|-|\\+|\\*)").matcher(ch).find())
+        if (Pattern.compile("[\u4E00-\u9FA5]").matcher(ch).find()
+                || Pattern.compile("(、|。|-|\\+|\\*)").matcher(ch).find())
             return 1;
         if (Pattern.compile("[A-Z]").matcher(ch).find())
             return 2;
@@ -322,30 +327,47 @@ final class Markdown {
         return 0;
     }
 
-    public static double getCharPercentage(String ch) {
+    public static double getCharPercentage(String ch, boolean bold) {
         int charType = getCharType(ch);
+        double val;
         switch (charType) {
             case 1:
-                return 8.33;
+                val = 8.33;
+                if (bold) {
+                    val = val * 1.1;
+                }
+                break;
 
             case 2:
-                return 5.55;
+                val = 5.55;
+                if (bold) {
+                    val = val * 1.3;
+                }
+                break;
 
             case 3:
-                return 5.0;
+                val = 5.0;
+                if (bold) {
+                    val = val * 1.3;
+                }
+                break;
 
             case 4:
-                return 5.0;
+                val = 5.0;
+                break;
 
             case 5:
-                return 1.75;
+                val = 1.75;
+                break;
 
             case 6:
-                return 3.45;
+                val = 3.45;
+                break;
 
             default:
-                return 7.0;
+                val = 7.0;
         }
+        return val;
     }
 }
 
