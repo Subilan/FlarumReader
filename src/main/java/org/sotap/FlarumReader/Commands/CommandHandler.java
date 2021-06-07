@@ -345,6 +345,12 @@ public final class CommandHandler implements CommandExecutor {
 					break;
 				}
 
+				case "help": {
+					LogUtil.log("&e点击下方网址打开 Wiki 页面。", sender);
+					LogUtil.log("&a&nhttps://wiki.sotap.org/#/plugins/flarum-reader", sender);
+					break;
+				}
+
 				default: {
 					LogUtil.failed("无效参数。", sender);
 				}
