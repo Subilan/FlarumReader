@@ -4,3 +4,5 @@ site: ~
 admin-name: ~
 # 管理员账号密码
 admin-password: ~
+# 获取最大用户数据量
+max-users: 500

@@ -142,7 +142,7 @@ public final class Requests {
                 client.start();
                 Integer offset = 0;
                 Integer limit = 50;
-                while (offset < 500) {
+                while (offset < Files.config.getInt("max-users")) {
                     HttpGet get = new HttpGet(site + "/api/users?page[limit]=" + limit + "&page[offset]=" + offset);
                     get.addHeader("Authorization", "Token " + token);
                     client.execute(get, new FutureCallback<HttpResponse>() {
