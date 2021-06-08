@@ -49,7 +49,7 @@ public final class CommandHandler implements CommandExecutor {
 			LogUtil.failed("操作必须由玩家进行。", sender);
 			return true;
 		}
-		req.createReply(l.getToken(), id, content, new FutureCallback<HttpResponse>(){
+		req.createReply(l.getToken(), id, content, new FutureCallback<HttpResponse>() {
 			public void completed(final HttpResponse re) {
 				JSONObject r = Requests.toJSON(re.getEntity());
 				if (!r.has("data")) {
@@ -73,7 +73,8 @@ public final class CommandHandler implements CommandExecutor {
 		return true;
 	}
 
-	private boolean showDiscussion(String id) {
+	private boolean showDiscussion(String id, boolean... save_) {
+		boolean save = save_.length > 0 ? save_[0] : false;
 		if (!(sender instanceof Player)) {
 			LogUtil.failed("操作必须由玩家进行。", sender);
 			return true;
@@ -83,7 +84,12 @@ public final class CommandHandler implements CommandExecutor {
 				JSONObject r = Requests.toJSON(re.getEntity());
 				try {
 					Discussion disc = new Discussion(r);
-					Bukkit.getScheduler().runTask(plugin, () -> BookUtil.openPlayer((Player) sender, disc.getBook()));
+					if (save) {
+						((Player) sender).getInventory().addItem(disc.getBook());
+						LogUtil.success("下载成功，请查看你的背包物品。", sender);
+					} else {
+						Bukkit.getScheduler().runTask(plugin, () -> BookUtil.openPlayer((Player) sender, disc.getBook()));
+					}
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -142,6 +148,10 @@ public final class CommandHandler implements CommandExecutor {
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if (cmd.getName().equalsIgnoreCase("flarumreader")) {
+			if (args.length == 0) {
+				LogUtil.failed("请提供至少一个参数。", sender);
+				return true;
+			}
 			req = new Requests();
 			senderName = sender.getName();
 			this.sender = sender;
@@ -236,6 +246,20 @@ public final class CommandHandler implements CommandExecutor {
 					break;
 				}
 
+				case "download":
+				case "d": {
+					if (args.length < 2) {
+						LogUtil.failed("必须指定一个序号或帖子 ID。", sender);
+						return true;
+					}
+					String id = getExactId(args[1]);
+					if (id.length() == 0) {
+						LogUtil.failed("无效参数序号或 ID。", sender);
+						return true;
+					}
+					return showDiscussion(id, true);
+				}
+
 				case "view":
 				case "v": {
 					if (args.length < 2) {
@@ -244,7 +268,7 @@ public final class CommandHandler implements CommandExecutor {
 					}
 					String id = getExactId(args[1]);
 					if (id.length() == 0) {
-						LogUtil.failed("无效参数。ID 须为正整数，序号须为 1-10 间的整数", sender);
+						LogUtil.failed("无效参数序号或 ID。", sender);
 						return true;
 					}
 					return showDiscussion(id);
@@ -289,7 +313,7 @@ public final class CommandHandler implements CommandExecutor {
 					}
 					String id = getExactId(args[1]);
 					if (id.length() == 0) {
-						LogUtil.failed("无效参数，ID 须为正整数，序号须为 1-10 间的整数。", sender);
+						LogUtil.failed("无效参数序号或 ID。", sender);
 						return true;
 					}
 					return replyDiscussion(id, content);

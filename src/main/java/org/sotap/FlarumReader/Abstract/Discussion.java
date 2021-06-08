@@ -256,7 +256,7 @@ public final class Discussion {
 
             k++;
         }
-        return BookUtil.writtenBook().pages(components).build();
+        return BookUtil.writtenBook().title(this.title).author(this.author).pages(components).build();
     }
 }
 
