@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.StringUtil;
 
 public final class Tab implements TabCompleter {
-    private static final String[] BASE = { "list", "view", "reply", "login", "logout", "reload", "download" };
+    private static final String[] BASE = { "list", "view", "reply", "login", "logout", "reload", "download", "post", "tags" };
 
     public Tab() {
     }
