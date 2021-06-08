@@ -44,17 +44,11 @@ public final class CommandHandler implements CommandExecutor {
 		this.currentLists = new MemoryConfiguration();
 	}
 
-	private boolean replyDiscussion(int index, boolean isId, String content) {
+	private boolean replyDiscussion(String id, String content) {
 		if (!(sender instanceof Player)) {
 			LogUtil.failed("操作必须由玩家进行。", sender);
 			return true;
 		}
-		String currentListId = currentLists.getString(senderName + "." + index);
-		if (currentListId == null && !isId) {
-			LogUtil.failed("你必须查看某一页面才能使用数字序号。", sender);
-			return true;
-		}
-		String id = isId ? Integer.toString(index) : currentListId;
 		req.createReply(l.getToken(), id, content, new FutureCallback<HttpResponse>(){
 			public void completed(final HttpResponse re) {
 				JSONObject r = Requests.toJSON(re.getEntity());
@@ -79,17 +73,11 @@ public final class CommandHandler implements CommandExecutor {
 		return true;
 	}
 
-	private boolean showDiscussion(int index, boolean isId) {
+	private boolean showDiscussion(String id) {
 		if (!(sender instanceof Player)) {
 			LogUtil.failed("操作必须由玩家进行。", sender);
 			return true;
 		}
-		String currentListId = currentLists.getString(senderName + "." + index);
-		if (currentListId == null && !isId) {
-			LogUtil.failed("你必须查看某一页面才能使用数字序号。", sender);
-			return true;
-		}
-		String id = isId ? Integer.toString(index) : currentListId;
 		req.getDiscussion(id, new FutureCallback<HttpResponse>() {
 			public void completed(final HttpResponse re) {
 				JSONObject r = Requests.toJSON(re.getEntity());
@@ -254,28 +242,12 @@ public final class CommandHandler implements CommandExecutor {
 						LogUtil.failed("必须指定一个序号或帖子 ID。", sender);
 						return true;
 					}
-					if (args[1].startsWith("#")) {
-						try {
-							int id = Integer.parseInt(args[1].substring(1));
-							LogUtil.info("加载中...", sender);
-							return showDiscussion(id, true);
-						} catch (NumberFormatException e) {
-							LogUtil.failed("无效的帖子 ID。", sender);
-						}
-					} else {
-						try {
-							int index = Integer.parseInt(args[1]);
-							if (!(index >= 1 && index <= 10)) {
-								LogUtil.failed("序号必须在 1 到 10 之间（包含端点）。", sender);
-								return true;
-							}
-							LogUtil.info("加载中...", sender);
-							return showDiscussion(index, false);
-						} catch (NumberFormatException e) {
-							LogUtil.failed("无效的序号。", sender);
-						}
+					String id = getExactId(args[1]);
+					if (id.length() == 0) {
+						LogUtil.failed("无效参数。ID 须为正整数，序号须为 1-10 间的整数", sender);
+						return true;
 					}
-					break;
+					return showDiscussion(id);
 				}
 
 				case "reply":
@@ -315,27 +287,12 @@ public final class CommandHandler implements CommandExecutor {
 						LogUtil.failed("内容不能为空。", sender);
 						return true;
 					}
-					if (args[1].startsWith("#")) {
-						try {
-							int id = Integer.parseInt(args[1].substring(1));
-							LogUtil.info("发送中...", sender);
-							return replyDiscussion(id, true, content);
-						} catch (NumberFormatException e) {
-							LogUtil.failed("无效的帖子 ID。", sender);
-						}
-					} else {
-						try {
-							int index = Integer.parseInt(args[1]);
-							if (!(index >= 1 && index <= 10)) {
-								LogUtil.failed("序号必须在 1 到 10 之间（包含端点）。", sender);
-								return true;
-							}
-							LogUtil.info("发送中...", sender);
-							return replyDiscussion(index, false, content);
-						} catch (NumberFormatException e) {
-							LogUtil.failed("无效的序号。", sender);
-						}
+					String id = getExactId(args[1]);
+					if (id.length() == 0) {
+						LogUtil.failed("无效参数，ID 须为正整数，序号须为 1-10 间的整数。", sender);
+						return true;
 					}
+					return replyDiscussion(id, content);
 				}
 
 				case "reload": {
@@ -357,5 +314,33 @@ public final class CommandHandler implements CommandExecutor {
 			}
 		}
 		return true;
+	}
+
+	public boolean isInteger(String intlike) {
+		try {
+			Integer.parseInt(intlike);
+			return true;
+		} catch (NumberFormatException e) {
+			return false;
+		}
+	}
+
+	public String getExactId(String argument) {
+		if (argument.startsWith("#")) {
+			String idlike = argument.substring(1);
+			if (!isInteger(idlike)) {
+				return "";
+			}
+			return idlike;
+		} else {
+			if (!isInteger(argument)) {
+				return "";
+			}
+			String idlike = currentLists.getString(senderName + "." + argument);
+			if (idlike == null) {
+				return "";
+			}
+			return idlike;
+		}
 	}
 }
