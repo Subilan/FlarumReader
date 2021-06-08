@@ -272,18 +272,17 @@ public final class CommandHandler implements CommandExecutor {
 
 				case "list":
 				case "l": {
-					try {
-						int page = (args.length > 1) ? Integer.parseInt(args[1]) : 1;
-						if (page <= 0) {
-							LogUtil.failed("页面序号不能小于 1。", sender);
-							return true;
-						}
-						LogUtil.info("加载中...", sender);
-						return showList(page);
-					} catch (NumberFormatException e) {
+					if (args.length > 1 && !isInteger(args[1])) {
 						LogUtil.failed("页面序号只能是正整数。", sender);
+						return true;
 					}
-					break;
+					int page = (args.length > 1) ? Integer.parseInt(args[1]) : 1;
+					if (page <= 0) {
+						LogUtil.failed("页面序号不能小于 1。", sender);
+						return true;
+					}
+					LogUtil.info("加载中...", sender);
+					return showList(page);
 				}
 
 				case "post":
