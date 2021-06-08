@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'org.sotap'
-version '1.0.0'
+version '1.1.0'
 ext.minecraftVersion = '1.16.5'
 mainClassName = 'org.sotap.FlarumReader.Main'
 
