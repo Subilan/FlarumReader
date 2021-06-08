@@ -1,5 +1,7 @@
 package org.sotap.FlarumReader.Utils;
 
+import java.util.List;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
@@ -13,6 +15,7 @@ import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 public final class Requests {
@@ -69,6 +72,38 @@ public final class Requests {
             return new JSONObject(EntityUtils.toString(ent));
         } catch (Exception e) {
             return empty;
+        }
+    }
+
+    public void createDiscussion(String token, String title, String content, List<String> tags_,
+            FutureCallback<HttpResponse> callback) {
+        CloseableHttpAsyncClient client = get();
+        client.start();
+        JSONObject innerData = new JSONObject();
+        JSONObject attributes = new JSONObject();
+        JSONObject relationships = new JSONObject();
+        JSONArray tags = new JSONArray();
+        attributes.put("content", content);
+        attributes.put("title", title);
+        String currentId;
+        for (String tag : tags_) {
+            currentId = Files.getTagIdByName(tag);
+            tags.put(new JSONObject().put("id", currentId).put("type", "tags"));
+        }
+        relationships.put("tags", new JSONObject().put("data", tags));
+        innerData.put("attributes", attributes);
+        innerData.put("relationships", relationships);
+        innerData.put("type", "discussions");
+        JSONObject data = new JSONObject().put("data", innerData);
+        try {
+            HttpPost post = new HttpPost(this.site + "/api/discussions");
+            StringEntity params = new StringEntity(data.toString(), "UTF-8");
+            post.addHeader("content-type", "application/json; charset=UTF-8");
+            post.setEntity(params);
+            post.addHeader("Authorization", "Token " + token);
+            client.execute(post, callback);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -150,7 +185,7 @@ public final class Requests {
                             try {
                                 Files.writeUserMap(re);
                             } catch (Exception e) {
-                                return;
+                                e.printStackTrace();
                             }
                         }
 
@@ -164,6 +199,43 @@ public final class Requests {
                     });
                     offset += 50;
                 }
+            }
+
+            public void failed(final Exception e) {
+                e.printStackTrace();
+            }
+
+            public void cancelled() {
+                return;
+            }
+        });
+    }
+
+    public void getTags() {
+        this.login(this.adminName, this.adminPassword, new FutureCallback<HttpResponse>() {
+            public void completed(final HttpResponse re) {
+                String token = toJSON(re.getEntity()).getString("token");
+                CloseableHttpAsyncClient client = get();
+                client.start();
+                HttpGet get = new HttpGet(site + "/api");
+                get.addHeader("Authorization", "Token " + token);
+                client.execute(get, new FutureCallback<HttpResponse>() {
+                    public void completed(final HttpResponse re) {
+                        try {
+                            Files.writeTags(re);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    public void failed(final Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    public void cancelled() {
+                        return;
+                    }
+                });
             }
 
             public void failed(final Exception e) {

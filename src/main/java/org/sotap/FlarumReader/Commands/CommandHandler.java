@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.concurrent.FutureCallback;
@@ -44,11 +45,39 @@ public final class CommandHandler implements CommandExecutor {
 		this.currentLists = new MemoryConfiguration();
 	}
 
-	private boolean replyDiscussion(String id, String content) {
-		if (!(sender instanceof Player)) {
-			LogUtil.failed("操作必须由玩家进行。", sender);
-			return true;
+	private boolean createDiscussion(String title, String content, List<String> tags) {
+		for (String tag : tags) {
+			if (Files.getTagIdByName(tag) == null) {
+				LogUtil.failed("包含一个或多个无效标签。", sender);
+				return true;
+			}
 		}
+		req.createDiscussion(l.getToken(), title, content, tags, new FutureCallback<HttpResponse>() {
+			public void completed(final HttpResponse re) {
+				JSONObject r = Requests.toJSON(re.getEntity());
+				if (!r.has("data")) {
+					String reason = r.getJSONArray("errors").getJSONObject(0).getString("code");
+					LogUtil.failed("发送失败。原因： &c" + reason, sender);
+					System.out.println("fr-debug: " + r.toString());
+				} else {
+					String id = r.getJSONObject("data").getString("id");
+					LogUtil.success("发送成功。主题地址： &e&nhttps://g.sotap.org/d/" + id, sender);
+				}
+			}
+
+			public void failed(final Exception e) {
+				e.printStackTrace();
+				LogUtil.failed("指令执行时出现问题。", sender);
+			}
+
+			public void cancelled() {
+				LogUtil.warn("任务被中断。", sender);
+			}
+		});
+		return true;
+	}
+
+	private boolean replyDiscussion(String id, String content) {
 		req.createReply(l.getToken(), id, content, new FutureCallback<HttpResponse>() {
 			public void completed(final HttpResponse re) {
 				JSONObject r = Requests.toJSON(re.getEntity());
@@ -88,7 +117,8 @@ public final class CommandHandler implements CommandExecutor {
 						((Player) sender).getInventory().addItem(disc.getBook());
 						LogUtil.success("下载成功，请查看你的背包物品。", sender);
 					} else {
-						Bukkit.getScheduler().runTask(plugin, () -> BookUtil.openPlayer((Player) sender, disc.getBook()));
+						Bukkit.getScheduler().runTask(plugin,
+								() -> BookUtil.openPlayer((Player) sender, disc.getBook()));
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -143,6 +173,16 @@ public final class CommandHandler implements CommandExecutor {
 			}
 		});
 		return true;
+	}
+
+	public void showTags() {
+		Set<String> tags = Files.getTags().getConfigurationSection("tags").getKeys(false);
+		if (tags.size() == 0) {
+			LogUtil.info("暂无任何可用标签。", sender);
+			return;
+		}
+		LogUtil.info("&a当前可用标签共 &e" + tags.size() + "&a 个", sender);
+		LogUtil.info("&e包括： " + String.join("， ", tags), sender);
 	}
 
 	@Override
@@ -246,6 +286,33 @@ public final class CommandHandler implements CommandExecutor {
 					break;
 				}
 
+				case "post":
+				case "p": {
+					if (args.length < 3) {
+						LogUtil.failed("必须指定标题和至少一个标签。", sender);
+						return true;
+					}
+					if (!(sender instanceof Player)) {
+						LogUtil.failed("操作必须由玩家进行。", sender);
+						return true;
+					}
+					Player p = (Player) sender;
+					ItemStack book = p.getInventory().getItemInMainHand();
+					String content;
+					if (book.getType() == Material.WRITTEN_BOOK || book.getType() == Material.WRITABLE_BOOK) {
+						BookMeta meta = (BookMeta) book.getItemMeta();
+						List<String> contents = meta.getPages();
+						content = String.join("", contents);
+					} else {
+						LogUtil.failed("必须手持一本已（未）署名的书。", sender);
+						return true;
+					}
+					String title = args[1];
+					List<String> tags = Arrays.asList(args).subList(2, args.length);
+					LogUtil.info("发送中...", sender);
+					return createDiscussion(title, content, tags);
+				}
+
 				case "download":
 				case "d": {
 					if (args.length < 2) {
@@ -329,6 +396,11 @@ public final class CommandHandler implements CommandExecutor {
 				case "help": {
 					LogUtil.log("&e点击下方网址打开 Wiki 页面。", sender);
 					LogUtil.log("&a&nhttps://wiki.sotap.org/#/plugins/flarum-reader", sender);
+					break;
+				}
+
+				case "tags": {
+					showTags();
 					break;
 				}
 

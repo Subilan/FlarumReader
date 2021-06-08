@@ -19,6 +19,7 @@ public final class Files {
         cwd = plugin.getDataFolder().getPath();
         config = plugin.getConfig();
         Files.load(".", "maps.yml");
+        Files.load(".", "tags.yml");
     }
 
     public static String getUsernameById(String id) {
@@ -105,5 +106,34 @@ public final class Files {
 
     public static void saveLogins(FileConfiguration data) {
         save(data, "./logins.yml");
+    }
+
+    public static FileConfiguration getTags() {
+        return Files.load(".", "tags.yml");
+    }
+
+    public static void updateTags() {
+        Requests req = new Requests();
+        req.getTags();
+    }
+
+    public static void writeTags(HttpResponse re) {
+        FileConfiguration tags = getTags();
+        tags.set("tags", null);
+        save(tags, "./tags.yml");
+        JSONObject r = Requests.toJSON(re.getEntity());
+        JSONArray data = r.getJSONArray("included");
+        JSONObject current;
+        for (int i = 0; i < data.length(); i++) {
+            current = data.getJSONObject(i);
+            if (!current.getString("type").equals("tags")) continue;
+            tags.set("tags." + current.getJSONObject("attributes").getString("name"), current.getString("id"));
+        }
+        save(tags, "./tags.yml");
+    }
+
+    public static String getTagIdByName(String name) {
+        FileConfiguration tags = getTags();
+        return tags.getString("tags." + name);
     }
 }
