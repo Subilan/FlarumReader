@@ -388,7 +388,8 @@ public final class CommandHandler implements CommandExecutor {
 				case "reload": {
 					Files.config = Files.load(".", "config.yml");
 					Files.updateUserMap();
-					LogUtil.success("已重载配置文件和用户表。", sender);
+					Files.updateTags();
+					LogUtil.success("已重载配置文件和数据表。", sender);
 					break;
 				}
 
