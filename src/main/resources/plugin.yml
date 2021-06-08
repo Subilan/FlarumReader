@@ -25,6 +25,8 @@ permissions:
     default: true
   flarumreader.download:
     default: op
+  flarumreader.post:
+    default: true
   flarumreader.reload:
     default: op
 
