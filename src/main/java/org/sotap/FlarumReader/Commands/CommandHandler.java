@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.concurrent.FutureCallback;
@@ -14,13 +13,9 @@ import org.bukkit.Material;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemoryConfiguration;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
-import org.json.JSONObject;
 import org.sotap.FlarumReader.Main;
 import org.sotap.FlarumReader.Abstract.Discussion;
 import org.sotap.FlarumReader.Abstract.Login;
@@ -46,7 +41,7 @@ public final class CommandHandler implements CommandExecutor {
 	}
 
 	private boolean createDiscussion(String title, String content, List<String> tags) {
-		for (String tag : tags) {
+		for (var tag : tags) {
 			if (Files.getTagIdByName(tag) == null) {
 				LogUtil.failed("包含一个或多个无效标签。", sender);
 				return true;
@@ -54,13 +49,13 @@ public final class CommandHandler implements CommandExecutor {
 		}
 		req.createDiscussion(l.getToken(), title, content, tags, new FutureCallback<HttpResponse>() {
 			public void completed(final HttpResponse re) {
-				JSONObject r = Requests.toJSON(re.getEntity());
+				var r = Requests.toJSON(re.getEntity());
 				if (!r.has("data")) {
-					String reason = r.getJSONArray("errors").getJSONObject(0).getString("code");
+					var reason = r.getJSONArray("errors").getJSONObject(0).getString("code");
 					LogUtil.failed("发送失败。原因： &c" + reason, sender);
 					System.out.println("fr-debug: " + r.toString());
 				} else {
-					String id = r.getJSONObject("data").getString("id");
+					var id = r.getJSONObject("data").getString("id");
 					LogUtil.success("发送成功。主题地址： &e&nhttps://g.sotap.org/d/" + id, sender);
 				}
 			}
@@ -80,9 +75,9 @@ public final class CommandHandler implements CommandExecutor {
 	private boolean replyDiscussion(String id, String content) {
 		req.createReply(l.getToken(), id, content, new FutureCallback<HttpResponse>() {
 			public void completed(final HttpResponse re) {
-				JSONObject r = Requests.toJSON(re.getEntity());
+				var r = Requests.toJSON(re.getEntity());
 				if (!r.has("data")) {
-					String reason = r.getJSONArray("errors").getJSONObject(0).getString("code");
+					var reason = r.getJSONArray("errors").getJSONObject(0).getString("code");
 					LogUtil.failed("发送失败。原因： &c" + reason, sender);
 					System.out.println("fr-debug: " + r.toString());
 				} else {
@@ -103,16 +98,16 @@ public final class CommandHandler implements CommandExecutor {
 	}
 
 	private boolean showDiscussion(String id, boolean... save_) {
-		boolean save = save_.length > 0 ? save_[0] : false;
+		var save = save_.length > 0 ? save_[0] : false;
 		if (!(sender instanceof Player)) {
 			LogUtil.failed("操作必须由玩家进行。", sender);
 			return true;
 		}
 		req.getDiscussion(id, new FutureCallback<HttpResponse>() {
 			public void completed(final HttpResponse re) {
-				JSONObject r = Requests.toJSON(re.getEntity());
+				var r = Requests.toJSON(re.getEntity());
 				try {
-					Discussion disc = new Discussion(r);
+					var disc = new Discussion(r);
 					if (save) {
 						((Player) sender).getInventory().addItem(disc.getBook());
 						LogUtil.success("下载成功，请查看你的背包物品。", sender);
@@ -140,9 +135,9 @@ public final class CommandHandler implements CommandExecutor {
 	private boolean showList(int page) {
 		req.getMainPage(page, new FutureCallback<HttpResponse>() {
 			public void completed(final HttpResponse re) {
-				JSONObject r = Requests.toJSON(re.getEntity());
-				MainPosts mps = new MainPosts(l.getToken(), r);
-				List<MainPost> all = mps.getAll();
+				var r = Requests.toJSON(re.getEntity());
+				var mps = new MainPosts(l.getToken(), r);
+				var all = mps.getAll();
 				MainPost current;
 				if (all.size() > 0)
 					LogUtil.log("&e===== &a&l第 &b" + page + " &a&l页 &r&e=====", sender);
@@ -176,7 +171,7 @@ public final class CommandHandler implements CommandExecutor {
 	}
 
 	public void showTags() {
-		Set<String> tags = Files.getTags().getConfigurationSection("tags").getKeys(false);
+		var tags = Files.getTags().getConfigurationSection("tags").getKeys(false);
 		if (tags.size() == 0) {
 			LogUtil.info("暂无任何可用标签。", sender);
 			return;
@@ -217,7 +212,7 @@ public final class CommandHandler implements CommandExecutor {
 					LogUtil.info("登录中...", sender);
 					req.login(args[1], args[2], new FutureCallback<HttpResponse>() {
 						public void completed(final HttpResponse re) {
-							JSONObject r = Requests.toJSON(re.getEntity());
+							var r = Requests.toJSON(re.getEntity());
 							if (r.isEmpty()) {
 								LogUtil.failed("指令执行时出现问题。", sender);
 							} else {
@@ -225,16 +220,16 @@ public final class CommandHandler implements CommandExecutor {
 									LogUtil.failed("用户名或密码错误。", sender);
 									return;
 								}
-								Date d = new Date();
-								SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+								var d = new Date();
+								var sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 								if (Files.getLogins().getLong(senderName + ".exp-time") > d.getTime()) {
 									LogUtil.failed("你已经登录了。", sender);
 									return;
 								}
-								String token = r.getString("token");
-								String id = Integer.toString(r.getInt("userId"));
-								FileConfiguration fc = Files.getLogins();
-								ConfigurationSection cs = fc.createSection(senderName);
+								var token = r.getString("token");
+								var id = Integer.toString(r.getInt("userId"));
+								var fc = Files.getLogins();
+								var cs = fc.createSection(senderName);
 								cs.set("token", token);
 								cs.set("id", id);
 								cs.set("username", args[1]);
@@ -242,7 +237,7 @@ public final class CommandHandler implements CommandExecutor {
 								cs.set("exp-time", d.getTime() + 604800000);
 								fc.set(senderName, cs);
 								Files.saveLogins(fc);
-								Calendar cal = Calendar.getInstance();
+								var cal = Calendar.getInstance();
 								cal.setTime(d);
 								cal.add(Calendar.DATE, 7);
 								LogUtil.success("成功登录账号 &b" + args[1] + "&r，凭证有效期至 &e" + sdf.format(cal.getTime()),
@@ -263,7 +258,7 @@ public final class CommandHandler implements CommandExecutor {
 					break;
 
 				case "logout": {
-					FileConfiguration l = Files.getLogins();
+					var l = Files.getLogins();
 					l.set(senderName, null);
 					Files.saveLogins(l);
 					LogUtil.success("成功退出。", sender);
@@ -296,18 +291,18 @@ public final class CommandHandler implements CommandExecutor {
 						return true;
 					}
 					Player p = (Player) sender;
-					ItemStack book = p.getInventory().getItemInMainHand();
+					var book = p.getInventory().getItemInMainHand();
 					String content;
 					if (book.getType() == Material.WRITTEN_BOOK || book.getType() == Material.WRITABLE_BOOK) {
 						BookMeta meta = (BookMeta) book.getItemMeta();
-						List<String> contents = meta.getPages();
+						var contents = meta.getPages();
 						content = String.join("", contents);
 					} else {
 						LogUtil.failed("必须手持一本已（未）署名的书。", sender);
 						return true;
 					}
-					String title = args[1];
-					List<String> tags = Arrays.asList(args).subList(2, args.length);
+					var title = args[1];
+					var tags = Arrays.asList(args).subList(2, args.length);
 					LogUtil.info("发送中...", sender);
 					return createDiscussion(title, content, tags);
 				}
@@ -318,7 +313,7 @@ public final class CommandHandler implements CommandExecutor {
 						LogUtil.failed("必须指定一个序号或帖子 ID。", sender);
 						return true;
 					}
-					String id = getExactId(args[1]);
+					var id = getExactId(args[1]);
 					if (id.length() == 0) {
 						LogUtil.failed("无效参数序号或 ID。", sender);
 						return true;
@@ -332,7 +327,7 @@ public final class CommandHandler implements CommandExecutor {
 						LogUtil.failed("必须指定一个序号或帖子 ID。", sender);
 						return true;
 					}
-					String id = getExactId(args[1]);
+					var id = getExactId(args[1]);
 					if (id.length() == 0) {
 						LogUtil.failed("无效参数序号或 ID。", sender);
 						return true;
@@ -350,25 +345,25 @@ public final class CommandHandler implements CommandExecutor {
 						LogUtil.failed("必须指定发帖内容。", sender);
 						return true;
 					}
-					String content = "";
+					var content = "";
 					if (args[2].equals("book")) {
 						if (!(sender instanceof Player)) {
 							LogUtil.failed("操作必须由玩家进行。", sender);
 							return true;
 						}
 						Player p = (Player) sender;
-						ItemStack book = p.getInventory().getItemInMainHand();
+						var book = p.getInventory().getItemInMainHand();
 						if (book.getType() == Material.WRITTEN_BOOK || book.getType() == Material.WRITABLE_BOOK) {
 							BookMeta meta = (BookMeta) book.getItemMeta();
-							List<String> contents = meta.getPages();
+							var contents = meta.getPages();
 							content = String.join("", contents);
 						} else {
 							LogUtil.failed("手持物品须为已（未）署名的书。", sender);
 							return true;
 						}
 					} else {
-						List<String> contentList = Arrays.asList(args).subList(2, args.length);
-						for (String t : contentList) {
+						var contentList = Arrays.asList(args).subList(2, args.length);
+						for (var t : contentList) {
 							content += " ";
 							content += t;
 						}
@@ -377,7 +372,7 @@ public final class CommandHandler implements CommandExecutor {
 						LogUtil.failed("内容不能为空。", sender);
 						return true;
 					}
-					String id = getExactId(args[1]);
+					var id = getExactId(args[1]);
 					if (id.length() == 0) {
 						LogUtil.failed("无效参数序号或 ID。", sender);
 						return true;
@@ -423,7 +418,7 @@ public final class CommandHandler implements CommandExecutor {
 
 	public String getExactId(String argument) {
 		if (argument.startsWith("#")) {
-			String idlike = argument.substring(1);
+			var idlike = argument.substring(1);
 			if (!isInteger(idlike)) {
 				return "";
 			}
@@ -432,7 +427,7 @@ public final class CommandHandler implements CommandExecutor {
 			if (!isInteger(argument)) {
 				return "";
 			}
-			String idlike = currentLists.getString(senderName + "." + argument);
+			var idlike = currentLists.getString(senderName + "." + argument);
 			if (idlike == null) {
 				return "";
 			}

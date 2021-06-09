@@ -9,7 +9,7 @@ public final class Calendars {
     public final static String DATE_FORMAT_PATTERN = "yyyy/MM/dd HH:mm:ss";
 
     public static Date parse(String input, String pattern) {
-        SimpleDateFormat sdf = new SimpleDateFormat(pattern);
+        var sdf = new SimpleDateFormat(pattern);
         try {
             return sdf.parse(input);
         } catch (ParseException e) {
@@ -19,7 +19,7 @@ public final class Calendars {
     }
 
     public static String toString(Date input) {
-        SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT_PATTERN);
+        var sdf = new SimpleDateFormat(DATE_FORMAT_PATTERN);
         return sdf.format(input);
     }
 }

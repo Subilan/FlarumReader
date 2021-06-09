@@ -7,7 +7,6 @@ import java.util.regex.Pattern;
 
 import org.bukkit.ChatColor;
 import org.bukkit.inventory.ItemStack;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.sotap.FlarumReader.Utils.Calendars;
 import org.sotap.FlarumReader.Utils.Files;
@@ -27,9 +26,9 @@ public final class Discussion {
     public String site;
 
     public Discussion(JSONObject object) {
-        JSONObject base = object.getJSONObject("data");
-        JSONObject attr = base.getJSONObject("attributes");
-        JSONArray included = object.getJSONArray("included");
+        var base = object.getJSONObject("data");
+        var attr = base.getJSONObject("attributes");
+        var included = object.getJSONArray("included");
         replyList = new ArrayList<>();
         this.id = base.getString("id");
         this.title = attr.getString("title");
@@ -85,26 +84,26 @@ public final class Discussion {
                 finalContent += "\n\n*由于 API 限制，回复可能显示不完整。[点击前往原帖查看](" + site + "/d/" + this.id + ")*";
             }
         }
-        Markdown md = new Markdown(finalContent);
-        String[] chars = md.parse().split("(?!^)");
-        PageBuilder current = getFirstPageBuilder();
+        var md = new Markdown(finalContent);
+        var chars = md.parse().split("(?!^)");
+        var current = getFirstPageBuilder();
         // bugnote
         // 第一页由于标题+作者+日期会占用 3~4 行（标题 1~2 行，作者 1 行，日期 1 行）所以正文从（抽象）第 6 行开始。
         // 如果设置小于 6 会导致标题占 2 行的帖子第一页内容少一行。2021/06/07
-        int line = 6;
-        int k = 0;
-        double lineLimit = 100.0;
+        var line = 6;
+        var k = 0;
+        var lineLimit = 100.0;
         TextBuilder tb;
-        boolean bold = false;
-        boolean underline = false;
-        boolean strikethrough = false;
-        boolean italic = false;
-        boolean linkContent = false;
-        boolean linkHref = false;
-        boolean link = false;
-        boolean green = false;
-        boolean aqua = false;
-        boolean yellow = false;
+        var bold = false;
+        var underline = false;
+        var strikethrough = false;
+        var italic = false;
+        var linkContent = false;
+        var linkHref = false;
+        var link = false;
+        var green = false;
+        var aqua = false;
+        var yellow = false;
         List<String> currentLinkContent = new ArrayList<>();
         List<String> currentLinkHref = new ArrayList<>();
         List<BaseComponent[]> components = new ArrayList<>();
@@ -139,9 +138,9 @@ public final class Discussion {
                     aqua = false;
                     yellow = false;
                     if (link) {
-                        String currentLinkContentString = String.join("", currentLinkContent);
-                        String currentLinkHrefString = String.join("", currentLinkHref);
-                        for (String c_ : currentLinkContent) {
+                        var currentLinkContentString = String.join("", currentLinkContent);
+                        var currentLinkHrefString = String.join("", currentLinkHref);
+                        for (var c_ : currentLinkContent) {
                             try {
                                 tb = BookUtil.TextBuilder.of(c_).style(ChatColor.UNDERLINE)
                                         .onHover(BookUtil.HoverAction.showText("点击打开链接"))
@@ -304,7 +303,7 @@ final class Markdown {
     public String parse() {
         this.output = this.input;
         int i = 0;
-        for (Pattern v : patterns) {
+        for (var v : patterns) {
             this.output = v.matcher(this.output).replaceAll(this.normReplacements.get(i));
             i++;
         }
@@ -329,7 +328,7 @@ final class Markdown {
     }
 
     public static double getCharPercentage(String ch, boolean bold) {
-        int charType = getCharType(ch);
+        var charType = getCharType(ch);
         double val;
         switch (charType) {
             case 1:
@@ -379,8 +378,8 @@ final class Reply {
     public Date createTime;
 
     public Reply(JSONObject object) {
-        JSONObject attr = object.getJSONObject("attributes");
-        JSONObject relations = object.getJSONObject("relationships");
+        var attr = object.getJSONObject("attributes");
+        var relations = object.getJSONObject("relationships");
         this.id = object.getString("id");
         this.createTime = Calendars.parse(attr.getString("createdAt"), Calendars.UTC_FORMAT_PATTERN);
         this.content = attr.getString("content");

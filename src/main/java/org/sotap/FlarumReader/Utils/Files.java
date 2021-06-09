@@ -7,7 +7,6 @@ import org.apache.http.HttpResponse;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.json.JSONArray;
 import org.json.JSONObject;
 import org.sotap.FlarumReader.Main;
 
@@ -23,19 +22,19 @@ public final class Files {
     }
 
     public static String getUsernameById(String id) {
-        FileConfiguration maps = getMaps();
+        var maps = getMaps();
         return maps.getString("userMap." + id + ".username");
     }
 
     public static String getIdByUsername(String username) {
-        FileConfiguration maps = getMaps();
+        var maps = getMaps();
         return maps.getString("userMap." + username + ".id");
     }
 
     public static void writeUserMap(HttpResponse res) {
-        FileConfiguration maps = getMaps();
-        JSONObject r = Requests.toJSON(res.getEntity());
-        JSONArray data = r.getJSONArray("data");
+        var maps = getMaps();
+        var r = Requests.toJSON(res.getEntity());
+        var data = r.getJSONArray("data");
         JSONObject current;
         for (int i = 0; i < data.length(); i++) {
             current = data.getJSONObject(i);
@@ -46,7 +45,7 @@ public final class Files {
     }
 
     public static void updateUserMap() {
-        Requests req = new Requests();
+        var req = new Requests();
         req.getUserMap();
     }
 
@@ -61,14 +60,14 @@ public final class Files {
     public static File getFile(File folder, String name) throws IOException {
         File file = new File(folder, name);
         if (!folder.exists()) {
-            boolean state = folder.mkdir();
+            var state = folder.mkdir();
             if (!state) {
                 throw new IOException("cannot create file directory automatically");
             }
         }
         if (!file.exists()) {
             try {
-                boolean state = file.createNewFile();
+                var state = file.createNewFile();
                 if (!state) {
                     throw new IOException("cannot create file automatically.");
                 }
@@ -113,7 +112,7 @@ public final class Files {
     }
 
     public static void updateTags() {
-        Requests req = new Requests();
+        var req = new Requests();
         req.getTags();
     }
 
@@ -121,8 +120,8 @@ public final class Files {
         FileConfiguration tags = getTags();
         tags.set("tags", null);
         save(tags, "./tags.yml");
-        JSONObject r = Requests.toJSON(re.getEntity());
-        JSONArray data = r.getJSONArray("included");
+        var r = Requests.toJSON(re.getEntity());
+        var data = r.getJSONArray("included");
         JSONObject current;
         for (int i = 0; i < data.length(); i++) {
             current = data.getJSONObject(i);
@@ -133,7 +132,7 @@ public final class Files {
     }
 
     public static String getTagIdByName(String name) {
-        FileConfiguration tags = getTags();
+        var tags = getTags();
         return tags.getString("tags." + name);
     }
 }

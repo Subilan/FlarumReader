@@ -19,7 +19,7 @@ public final class Login {
     }
 
     public boolean isExpired() {
-        Date d = new Date();
+        var d = new Date();
         if (this.exists()) {
             return d.getTime() > this.loginData.getLong("exp-time");
         }

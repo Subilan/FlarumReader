@@ -3,7 +3,6 @@ package org.sotap.FlarumReader.Abstract;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 public final class MainPosts {
@@ -17,7 +16,7 @@ public final class MainPosts {
 
     public List<MainPost> getAll() {
         List<MainPost> mpl = new ArrayList<>();
-        JSONArray mainPageItems = this.mainPage.getJSONArray("data");
+        var mainPageItems = this.mainPage.getJSONArray("data");
         for (int i = 0; i < mainPageItems.length(); i++) {
             mpl.add(new MainPost(this.token, mainPageItems.getJSONObject(i)));
         }

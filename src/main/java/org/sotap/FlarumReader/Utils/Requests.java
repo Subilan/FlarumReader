@@ -41,13 +41,13 @@ public final class Requests {
     public void login(String name, String password, FutureCallback<HttpResponse> callback) {
         CloseableHttpAsyncClient client = get();
         client.start();
-        JSONObject data = new JSONObject();
+        var data = new JSONObject();
         data.put("identification", name);
         data.put("password", password);
         data.put("lifetime", 604800);
         try {
-            HttpPost post = new HttpPost(this.site + "/api/token");
-            StringEntity params = new StringEntity(data.toString());
+            var post = new HttpPost(this.site + "/api/token");
+            var params = new StringEntity(data.toString());
             post.setHeader("content-type", "application/json");
             post.setEntity(params);
             client.execute(post, callback);
@@ -57,10 +57,10 @@ public final class Requests {
     }
 
     public void getMainPage(int page, FutureCallback<HttpResponse> callback) {
-        CloseableHttpAsyncClient client = get();
+        var client = get();
         client.start();
         try {
-            HttpGet get = new HttpGet(this.site + "/api/discussions?page[limit]=10&page[offset]=" + (page - 1) * 10);
+            var get = new HttpGet(this.site + "/api/discussions?page[limit]=10&page[offset]=" + (page - 1) * 10);
             client.execute(get, callback);
         } catch (Exception e) {
             e.printStackTrace();
@@ -77,16 +77,16 @@ public final class Requests {
 
     public void createDiscussion(String token, String title, String content, List<String> tags_,
             FutureCallback<HttpResponse> callback) {
-        CloseableHttpAsyncClient client = get();
+        var client = get();
         client.start();
-        JSONObject innerData = new JSONObject();
-        JSONObject attributes = new JSONObject();
-        JSONObject relationships = new JSONObject();
-        JSONArray tags = new JSONArray();
+        var innerData = new JSONObject();
+        var attributes = new JSONObject();
+        var relationships = new JSONObject();
+        var tags = new JSONArray();
         attributes.put("content", content);
         attributes.put("title", title);
         String currentId;
-        for (String tag : tags_) {
+        for (var tag : tags_) {
             currentId = Files.getTagIdByName(tag);
             tags.put(new JSONObject().put("id", currentId).put("type", "tags"));
         }
@@ -94,10 +94,10 @@ public final class Requests {
         innerData.put("attributes", attributes);
         innerData.put("relationships", relationships);
         innerData.put("type", "discussions");
-        JSONObject data = new JSONObject().put("data", innerData);
+        var data = new JSONObject().put("data", innerData);
         try {
-            HttpPost post = new HttpPost(this.site + "/api/discussions");
-            StringEntity params = new StringEntity(data.toString(), "UTF-8");
+            var post = new HttpPost(this.site + "/api/discussions");
+            var params = new StringEntity(data.toString(), "UTF-8");
             post.addHeader("content-type", "application/json; charset=UTF-8");
             post.setEntity(params);
             post.addHeader("Authorization", "Token " + token);
@@ -108,21 +108,21 @@ public final class Requests {
     }
 
     public void createReply(String token, String id, String content, FutureCallback<HttpResponse> callback) {
-        CloseableHttpAsyncClient client = get();
+        var client = get();
         client.start();
-        JSONObject innerData = new JSONObject();
-        JSONObject attributes = new JSONObject();
-        JSONObject relationships = new JSONObject();
+        var innerData = new JSONObject();
+        var attributes = new JSONObject();
+        var relationships = new JSONObject();
         attributes.put("content", content);
         relationships.put("discussion",
                 new JSONObject().put("data", new JSONObject().put("type", "discussions").put("id", id)));
         innerData.put("attributes", attributes);
         innerData.put("relationships", relationships);
         innerData.put("type", "posts");
-        JSONObject data = new JSONObject().put("data", innerData);
+        var data = new JSONObject().put("data", innerData);
         try {
-            HttpPost post = new HttpPost(this.site + "/api/posts");
-            StringEntity params = new StringEntity(data.toString(), "UTF-8");
+            var post = new HttpPost(this.site + "/api/posts");
+            var params = new StringEntity(data.toString(), "UTF-8");
             post.addHeader("content-type", "application/json; charset=UTF-8");
             post.setEntity(params);
             post.addHeader("Authorization", "Token " + token);
@@ -135,11 +135,11 @@ public final class Requests {
     public void getDiscussion(String id, FutureCallback<HttpResponse> callback) {
         this.login(this.adminName, this.adminPassword, new FutureCallback<HttpResponse>() {
             public void completed(final HttpResponse re) {
-                String token = toJSON(re.getEntity()).getString("token");
-                CloseableHttpAsyncClient client = get();
+                var token = toJSON(re.getEntity()).getString("token");
+                var client = get();
                 client.start();
                 try {
-                    HttpGet get = new HttpGet(site + "/api/discussions/" + id);
+                    var get = new HttpGet(site + "/api/discussions/" + id);
                     get.addHeader("Authorization", "Token " + token);
                     client.execute(get, callback);
                 } catch (Exception e) {
@@ -158,10 +158,10 @@ public final class Requests {
     }
 
     public void getUser(String token, String identifier, FutureCallback<HttpResponse> callback) {
-        CloseableHttpAsyncClient client = get();
+        var client = get();
         client.start();
         try {
-            HttpGet get = new HttpGet(this.site + "/api/users/" + identifier);
+            var get = new HttpGet(this.site + "/api/users/" + identifier);
             get.addHeader("Authorization", "Token " + token);
             client.execute(get, callback);
         } catch (Exception e) {
@@ -172,11 +172,11 @@ public final class Requests {
     public void getUserMap() {
         this.login(this.adminName, this.adminPassword, new FutureCallback<HttpResponse>() {
             public void completed(final HttpResponse re) {
-                String token = toJSON(re.getEntity()).getString("token");
-                CloseableHttpAsyncClient client = get();
+                var token = toJSON(re.getEntity()).getString("token");
+                var client = get();
                 client.start();
-                Integer offset = 0;
-                Integer limit = 50;
+                var offset = 0;
+                var limit = 50;
                 while (offset < Files.config.getInt("max-users")) {
                     HttpGet get = new HttpGet(site + "/api/users?page[limit]=" + limit + "&page[offset]=" + offset);
                     get.addHeader("Authorization", "Token " + token);
@@ -214,10 +214,10 @@ public final class Requests {
     public void getTags() {
         this.login(this.adminName, this.adminPassword, new FutureCallback<HttpResponse>() {
             public void completed(final HttpResponse re) {
-                String token = toJSON(re.getEntity()).getString("token");
-                CloseableHttpAsyncClient client = get();
+                var token = toJSON(re.getEntity()).getString("token");
+                var client = get();
                 client.start();
-                HttpGet get = new HttpGet(site + "/api");
+                var get = new HttpGet(site + "/api");
                 get.addHeader("Authorization", "Token " + token);
                 client.execute(get, new FutureCallback<HttpResponse>() {
                     public void completed(final HttpResponse re) {

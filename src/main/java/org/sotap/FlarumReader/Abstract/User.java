@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.concurrent.FutureCallback;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.sotap.FlarumReader.Utils.Calendars;
@@ -24,7 +23,7 @@ public final class User {
         Requests req = new Requests();
         req.getUser(token, identifier, new FutureCallback<HttpResponse>() {
             public void completed(final HttpResponse re) {
-                JSONObject r = Requests.toJSON(re.getEntity());
+                var r = Requests.toJSON(re.getEntity());
                 User.this.init(r);
             }
 
@@ -42,7 +41,7 @@ public final class User {
         this.raw = rawJson;
         if (this.exists()) {
             this.groups = new ArrayList<>();
-            JSONObject data = this.raw.getJSONObject("data");
+            var data = this.raw.getJSONObject("data");
             this.name = data.getJSONObject("attributes").getString("username");
             this.joinTime = Calendars.parse(data.getJSONObject("attributes").getString("joinTime"),
                     "yyyy-MM-dd'T'HH:mm:ssXXX");
@@ -53,7 +52,7 @@ public final class User {
             }
             this.id = data.getString("id");
             try {
-                JSONArray included = this.raw.getJSONArray("included");
+                var included = this.raw.getJSONArray("included");
                 for (int i = 0; i < included.length(); i++) {
                     this.groups.add(included.getJSONObject(i).getJSONObject("attributes").getString("nameSingular"));
                 }
