@@ -2,7 +2,6 @@
 
 [![Java CI with Gradle](https://github.com/sotapmc/FlarumReader/actions/workflows/gradle.yml/badge.svg)](https://github.com/sotapmc/FlarumReader/actions/workflows/gradle.yml)
 ![](https://img.shields.io/badge/11-darkred?logo=java)
-![](https://img.shields.io/badge/poweredby-sotapmc-blue)
 ![](https://img.shields.io/badge/API-1.16.5-R0.1-orange)
 
 **FlarumReader** 是一个用于在 Minecraft 服务器内阅读 Flarum 论坛内容并进行交互的插件。目前已经实现的功能有
